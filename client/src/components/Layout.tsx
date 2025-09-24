@@ -8,6 +8,7 @@ import {
   Link,
   Button,
   Stack,
+  Paper,
 } from "@mui/material";
 import { ThemeProvider, CssBaseline } from "@mui/material";
 import { theme } from "@/config/theme.js";
@@ -23,6 +24,9 @@ interface LayoutProps {
   };
 }
 
+const HEADER_HEIGHT = 50; // px
+const FOOTER_HEIGHT = 60; // px
+
 const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
   const {
     developerName = "Hrithik Raj",
@@ -35,25 +39,60 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <HeightWrapper>
-        <Box
-          sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
-        >
-          <AppBar position="static" elevation={0}>
-            <Toolbar>
-              <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
+        <Box sx={{ minHeight: "100dvh" }}>
+          <AppBar
+            position="fixed"
+            elevation={0}
+            sx={{ height: HEADER_HEIGHT, justifyContent: "center" }}
+          >
+            <Toolbar sx={{ minHeight: HEADER_HEIGHT }}>
+              <Typography
+                variant="h6"
+                component="div"
+                sx={{
+                  flexGrow: 1,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                }}
+              >
+                <img src="/vite.svg" width={32} height={32} alt="logo" />
                 Happy Claim
               </Typography>
             </Toolbar>
           </AppBar>
 
-          <Container component="main" sx={{ py: 4, flexGrow: 1 }}>
+          {/* Top spacer to offset fixed header */}
+          <Box sx={{ height: HEADER_HEIGHT }} />
+
+          {/* Main content with bottom padding to avoid footer overlap */}
+          <Container
+            component="main"
+            sx={{
+              py: 4,
+              pb: `calc(${FOOTER_HEIGHT}px + 16px)`,
+              minHeight: `calc(100dvh - ${HEADER_HEIGHT}px - ${FOOTER_HEIGHT}px)`,
+            }}
+          >
             {children}
           </Container>
 
-          {/* Footer */}
-          <Box
+          {/* Sticky Footer */}
+          <Paper
             component="footer"
-            sx={{ borderTop: 1, borderColor: "divider", py: 3 }}
+            square
+            elevation={3}
+            sx={{
+              position: "fixed",
+              left: 0,
+              right: 0,
+              bottom: 0,
+              height: FOOTER_HEIGHT,
+              borderTop: 1,
+              borderColor: "divider",
+              display: "flex",
+              alignItems: "center",
+            }}
           >
             <Container>
               <Stack
@@ -78,7 +117,6 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                     </Link>
                   </Typography>
                 </Box>
-
                 <Stack direction="row" spacing={1}>
                   <Button
                     variant="outlined"
@@ -91,7 +129,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
                 </Stack>
               </Stack>
             </Container>
-          </Box>
+          </Paper>
         </Box>
       </HeightWrapper>
     </ThemeProvider>

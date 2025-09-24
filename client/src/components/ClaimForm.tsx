@@ -127,7 +127,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   return (
     <Paper elevation={3} sx={{ p: 4 }}>
       <Typography variant="h4" component="h1" gutterBottom align="center">
-        Happy Claim
+        Enter Details To Reimburse
       </Typography>
       <Box
         component="form"
