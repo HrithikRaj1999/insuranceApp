@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import path from 'path';
 import claimRoutes from './routes/claim.route';
-
+import policyRoutes from "./routes/policy.route";
 dotenv.config();
 
 const app: Express = express();
@@ -35,7 +35,7 @@ mongoose.connect(MONGODB_URI)
 
 
 app.use('/api/claims', claimRoutes);
-
+app.use("/api/policies", policyRoutes);
 
 app.get('/health', (req, res) => {
   res.json({ 

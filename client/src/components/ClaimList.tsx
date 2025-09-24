@@ -54,7 +54,7 @@ const ClaimList: React.FC<ClaimListProps> = ({
         <TableBody>
           {claims.map((claim) => (
             <TableRow key={claim._id}>
-              <TableCell>{claim.policyId}</TableCell>
+              <TableCell>{claim.policy.policyNumber}</TableCell>
               <TableCell>{claim.name}</TableCell>
               <TableCell>
                 {claim.description.substring(0, 50)}

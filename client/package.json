@@ -15,12 +15,14 @@
     "@mui/icons-material": "^5.18.0",
     "@mui/material": "^5.18.0",
     "axios": "^1.12.2",
+    "lodash": "^4.17.21",
     "path": "^0.12.7",
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
+    "@types/lodash": "^4.17.20",
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",

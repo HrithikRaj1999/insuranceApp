@@ -55,6 +55,21 @@ class ApiService {
   async deleteClaim(id: string): Promise<void> {
     await this.api.delete(`/api/claims/${id}`);
   }
+
+  // ================
+  // Policy
+  // ============
+  async policyExists(policyNumber: string): Promise<boolean> {
+    if (!policyNumber) return false;
+    try {
+      const res = await this.api.get("/api/policies/exists", {
+        params: { policyNumber },
+      });
+      return Boolean(res.data?.exists);
+    } catch {
+      return false;
+    }
+  }
 }
 
 export default new ApiService();

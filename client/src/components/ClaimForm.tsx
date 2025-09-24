@@ -1,16 +1,18 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState, useCallback } from "react";
+import debounce from "lodash/debounce";
 import {
   Paper,
   TextField,
   Button,
   Box,
   Typography,
-  Alert
+  Alert,
 } from "@mui/material";
 import { validateClaimForm } from "@/utils/validators.js";
 import FileUpload from "./FileUpload.js";
 import ClaimSummary from "./ClaimSummary.js";
 import { Claim, ClaimFormData, FormErrors } from "@/types/Claim.type.js";
+import apiService from "@services/apiService.js";
 
 interface ClaimFormProps {
   onSubmit: (data: ClaimFormData, file: File | null) => void;
@@ -20,6 +22,9 @@ interface ClaimFormProps {
   mode?: "view" | "edit";
 }
 
+const MIN_POLICY_LENGTH = 6;
+const DEBOUNCE_MS = 400;
+
 const ClaimForm: React.FC<ClaimFormProps> = ({
   onSubmit,
   initial,
@@ -27,23 +32,44 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   mode,
   loading = false,
 }) => {
-  const [formData, setFormData] = useState<ClaimFormData>({
-    name: "",
-    policyId: "",
-    description: "",
-  });
+  const [formData, setFormData] = useState<ClaimFormData>(() => ({
+    name: initial?.name ?? "",
+    policyId: initial?.policy.policyNumber ?? "",
+    description: initial?.description ?? "",
+  }));
   const [file, setFile] = useState<File | null>(null);
   const [errors, setErrors] = useState<FormErrors>({});
+  const [policyChecking, setPolicyChecking] = useState(false);
+  const [policyValid, setPolicyValid] = useState<boolean | null>(null);
   const readOnly = mode === "view";
-  useEffect(() => {
-    if (initial) {
-      setFormData({
-        name: initial.name ?? "",
-        policyId: initial.policyId ?? "",
-        description: initial.description ?? "",
-      });
+
+  const checkPolicyExists = useCallback(async (id: string) => {
+    if (!id || id.length < MIN_POLICY_LENGTH) return;
+    setPolicyChecking(true);
+    try {
+      const exists = await apiService.policyExists(id);
+      setPolicyValid(exists);
+      if (!exists) {
+        setErrors((prev) => ({
+          ...prev,
+          policyId: "Policy ID not found. Please check and try again.",
+        }));
+      }
+    } catch {
+      setPolicyValid(false);
+      setErrors((prev) => ({
+        ...prev,
+        policyId: "Could not verify Policy ID. Please try again.",
+      }));
+    } finally {
+      setPolicyChecking(false);
     }
-  }, [initial]);
+  }, []);
+
+  const debouncedCheck = useMemo(
+    () => debounce((id: string) => checkPolicyExists(id), DEBOUNCE_MS),
+    [checkPolicyExists]
+  );
 
   const handleInputChange =
     (field: keyof ClaimFormData) =>
@@ -51,8 +77,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       const v = e.target.value;
       setFormData((prev) => ({
         ...prev,
-        [field]: field === "policyId" ? v.toUpperCase() : v, // keep Policy ID uppercase
+        [field]: field === "policyId" ? v.toUpperCase() : v,
       }));
+      if (field === "policyId") {
+        debouncedCheck(v.toUpperCase());
+      }
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     };
 
@@ -69,10 +98,25 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       return;
     }
     try {
+      setPolicyChecking(true);
+      const exists = await apiService.policyExists(formData.policyId);
+      setPolicyValid(exists);
+      if (!exists) {
+        setErrors((prev) => ({
+          ...prev,
+          policyId: "Policy ID not found. Please check and try again.",
+        }));
+        return;
+      }
+    } finally {
+      setPolicyChecking(false);
+    }
+    try {
       await onSubmit(formData, file);
       if (!initial) {
         setFormData({ name: "", policyId: "", description: "" });
         setFile(null);
+        setPolicyValid(null);
       }
       setErrors({});
     } catch {
@@ -85,7 +129,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       <Typography variant="h4" component="h1" gutterBottom align="center">
         Happy Claim
       </Typography>
-
       <Box
         component="form"
         id="claim-form"
@@ -104,7 +147,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           required
           disabled={loading || readOnly}
         />
-
         <TextField
           fullWidth
           label="Policy ID"
@@ -112,13 +154,19 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           value={formData.policyId}
           onChange={handleInputChange("policyId")}
           error={!!errors.policyId}
-          helperText={errors.policyId || "Format: 6–12 alphanumeric characters"}
+          helperText={
+            errors.policyId ||
+            (policyChecking
+              ? "Checking policy..."
+              : policyValid === true
+              ? "Policy verified."
+              : "Format: 6–12 alphanumeric characters")
+          }
           margin="normal"
           required
           disabled={loading || readOnly}
           inputProps={{ style: { textTransform: "uppercase" } }}
         />
-
         <TextField
           fullWidth
           multiline
@@ -136,27 +184,27 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           required
           disabled={loading || readOnly}
         />
-
         <FileUpload
           file={file}
           onFileChange={handleFileChange}
           error={errors.file}
           disabled={loading || readOnly}
         />
-
         {errors.submit && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {errors.submit}
           </Alert>
         )}
-
         {!readOnly && mode !== "edit" && (
-          <Button type="submit" variant="contained" disabled={loading}>
+          <Button
+            type="submit"
+            variant="contained"
+            disabled={loading || policyChecking}
+          >
             {loading ? "Submitting..." : "Submit"}
           </Button>
         )}
       </Box>
-
       {summary && (
         <ClaimSummary defaultValue={initial?.summary ?? ""} summary={summary} />
       )}

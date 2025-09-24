@@ -1,8 +1,9 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Document, Schema } from "mongoose";
+import { IPolicy } from "./policy.model";
 
 export interface IClaim extends Document {
   name: string;
-  policyId: string;
+  policy: IPolicy["_id"];
   description: string;
   summary?: string;
   fileUrl?: string;
@@ -15,39 +16,16 @@ export interface IClaim extends Document {
 
 const ClaimSchema: Schema = new Schema(
   {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    policyId: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    summary: {
-      type: String,
-    },
-    fileUrl: {
-      type: String, // This will be the primary URL (S3 or local based on env)
-    },
-    fileS3Url: {
-      type: String, // Always stores S3 URL
-    },
-    fileS3Key: {
-      type: String, // S3 object key for future operations
-    },
-    fileLocalPath: {
-      type: String, // Local path (only in dev)
-    },
+    name: { type: String, required: true, trim: true },
+    policy: { type: Schema.Types.ObjectId, ref: "Policy", required: true },
+    description: { type: String, required: true },
+    summary: { type: String },
+    fileUrl: { type: String },
+    fileS3Url: { type: String },
+    fileS3Key: { type: String },
+    fileLocalPath: { type: String },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
-export default mongoose.model<IClaim>('Claim', ClaimSchema);
+export default mongoose.model<IClaim>("Claim", ClaimSchema);

@@ -1,7 +1,7 @@
 export interface Claim {
   _id?: string;
   name: string;
-  policyId: string;
+  policy: { _id: string; policyNumber: string };
   description: string;
   summary?: string;
   fileUrl?: string;

@@ -3,39 +3,43 @@ import fs from "fs";
 import Claim from "../models/claim.model";
 import { uploadToS3, deleteFromS3 } from "./s3Service";
 import { generateSummary } from "./aiService";
-
+import mongoose, { Types } from "mongoose";
 export type CreateClaimInput = {
   name: string;
-  policyId: string;
   description: string;
+  policy: Types.ObjectId;
   summary?: string;
 };
 
-export type UpdateClaimInput = Partial<CreateClaimInput> & {
-  name?: string;
-  description?: string;
-  fileUrl?: string | null;
-  fileS3Url?: string | null;
-  fileS3Key?: string | null;
-  fileLocalPath?: string | null;
-};
+export type UpdateClaimInput = Partial<{
+  name: string;
+  description: string;
+  policy: Types.ObjectId;
+  fileUrl: string | null;
+  summary?: string;
+  fileS3Url: string | null;
+  fileS3Key: string | null;
+  fileLocalPath: string | null;
+}>;
 
 const isDev = process.env.NODE_ENV === "development";
 
 export async function listClaims() {
-  const claims = await Claim.find().sort({ createdAt: -1 });
+  const claims = await Claim.find()
+    .sort({ createdAt: -1 })
+    .populate("policy", "policyNumber");
   return claims;
 }
 
 export async function getClaimById(id: string) {
-  return Claim.findById(id);
+  return await Claim.findById(id).populate("policy", "policyNumber");
 }
 
 export async function createClaim(
   data: CreateClaimInput,
   file?: Express.Multer.File
 ) {
-  const summary = await generateSummary(data.description);
+  const summary = data.summary ?? (await generateSummary(data.description));
 
   let fileData: UpdateClaimInput = {
     fileUrl: null,
@@ -55,7 +59,9 @@ export async function createClaim(
   }
 
   const newClaim = new Claim({
-    ...data,
+    name: data.name,
+    description: data.description,
+    policy: data.policy, // <- correct field on schema
     summary,
     ...fileData,
   });
@@ -105,6 +111,8 @@ export async function updateClaim(
 }
 
 export async function deleteClaim(id: string) {
+  if (!mongoose.isValidObjectId(id)) return null;
+
   const claim = await Claim.findById(id);
   if (!claim) return null;
 

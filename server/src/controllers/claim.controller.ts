@@ -1,8 +1,19 @@
-import { Request, Response } from 'express';
-import { listClaims, getClaimById, createClaim, updateClaim, deleteClaim } from '../services/claim.service';
-import { getSignedUrl } from '../services/s3Service';
+import { Request, Response } from "express";
+import {
+  listClaims,
+  getClaimById,
+  createClaim,
+  updateClaim,
+  deleteClaim,
+} from "../services/claim.service";
+import { getSignedUrl } from "../services/s3Service";
+import policyModel from "../models/policy.model";
+import { ObjectId, Types } from "mongoose";
 
-const useSigned = process.env.USE_SIGNED_URLS === 'true';
+const errMsg = (e: unknown, fallback = "Internal server error") =>
+  e instanceof Error ? e.message : fallback;
+
+const useSigned = process.env.USE_SIGNED_URLS === "true";
 
 export async function getAllClaims(req: Request, res: Response) {
   try {
@@ -20,15 +31,15 @@ export async function getAllClaims(req: Request, res: Response) {
 
     res.json(claimsWithUrls);
   } catch (e) {
-    console.error('Error fetching claims:', e);
-    res.status(500).json({ error: 'Failed to fetch claims' });
+    console.error("Error fetching claims:", e);
+    res.status(500).json({ error: "Failed to fetch claims" });
   }
 }
 
 export async function getClaim(req: Request, res: Response) {
   try {
     const claim = await getClaimById(req.params.id);
-    if (!claim) return res.status(404).json({ error: 'Claim not found' });
+    if (!claim) return res.status(404).json({ error: "Claim not found" });
 
     const obj = claim.toObject();
     if (obj.fileS3Key && useSigned) {
@@ -37,40 +48,66 @@ export async function getClaim(req: Request, res: Response) {
 
     res.json(obj);
   } catch (e) {
-    console.error('Error fetching claim:', e);
-    res.status(500).json({ error: 'Failed to fetch claim' });
+    console.error("Error fetching claim:", e);
+    res.status(500).json({ error: "Failed to fetch claim" });
   }
 }
 
 export async function createClaimHandler(req: Request, res: Response) {
   try {
-    const { name, policyId, description } = req.body;
-    const saved = await createClaim({ name, policyId, description }, req.file || undefined);
-    res.status(201).json(saved);
+    const { name, policyId, description } = req.body as {
+      name: string;
+      policyId: string; // policy number from UI
+      description: string;
+    };
+
+    if (!name || !policyId || !description) {
+      return res
+        .status(400)
+        .json({ message: "name, policyId and description are required" });
+    }
+
+    const policyDoc = await policyModel.findOne({ policyNumber: policyId });
+    if (!policyDoc) {
+      return res
+        .status(400)
+        .json({ message: "Invalid Policy ID. Policy not found." });
+    }
+
+    const saved = await createClaim(
+      { name, description, policy: policyDoc._id as Types.ObjectId },
+      req.file || undefined
+    );
+
+    return res.status(201).json(saved);
   } catch (e) {
-    console.error('Error creating claim:', e);
-    res.status(500).json({ error: 'Failed to create claim' });
+    console.error("Error creating claim:", e);
+    return res.status(500).json({ message: errMsg(e) });
   }
 }
 
 export async function updateClaimHandler(req: Request, res: Response) {
   try {
-    const updated = await updateClaim(req.params.id, { ...req.body }, req.file || undefined);
-    if (!updated) return res.status(404).json({ error: 'Claim not found' });
+    const updated = await updateClaim(
+      req.params.id,
+      { ...req.body },
+      req.file || undefined
+    );
+    if (!updated) return res.status(404).json({ error: "Claim not found" });
     res.json(updated);
   } catch (e) {
-    console.error('Error updating claim:', e);
-    res.status(500).json({ error: 'Failed to update claim' });
+    console.error("Error updating claim:", e);
+    res.status(500).json({ error: "Failed to update claim" });
   }
 }
 
 export async function deleteClaimHandler(req: Request, res: Response) {
   try {
     const deleted = await deleteClaim(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'Claim not found' });
-    res.json({ message: 'Claim and associated files deleted successfully' });
+    if (!deleted) return res.status(404).json({ error: "Claim not found" });
+    res.json({ message: "Claim and associated files deleted successfully" });
   } catch (e) {
-    console.error('Error deleting claim:', e);
-    res.status(500).json({ error: 'Failed to delete claim' });
+    console.error("Error deleting claim:", e);
+    res.status(500).json({ error: "Failed to delete claim" });
   }
 }
