@@ -1,0 +1,42 @@
+name: Rollback Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to rollback to'
+        required: true
+        default: 'previous'
+
+jobs:
+  rollback:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Rollback ECS Service
+      run: |
+        if [ "${{ github.event.inputs.version }}" == "previous" ]; then
+          TASK_ARN=$(aws ecs list-task-definitions --family-prefix insurance-task --max-items 2 --query 'taskDefinitionArns[1]' --output text)
+        else
+          TASK_ARN="arn:aws:ecs:us-east-1:${{ secrets.AWS_ACCOUNT_ID }}:task-definition/insurance-task:${{ github.event.inputs.version }}"
+        fi
+        
+        aws ecs update-service \
+          --cluster insurance-cluster \
+          --service insurance-service \
+          --task-definition $TASK_ARN \
+          --force-new-deployment
+
+    - name: Notify Rollback
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        text: 'Rollback initiated to version ${{ github.event.inputs.version }}'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}

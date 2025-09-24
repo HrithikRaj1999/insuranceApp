@@ -1,7 +1,27 @@
 {
-  "files": [],
-  "references": [
-    { "path": "./tsconfig.app.json" },
-    { "path": "./tsconfig.node.json" }
-  ]
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "Node16",
+    "moduleResolution": "Node16",
+    "jsx": "react-jsx",
+    "esModuleInterop": true,
+    "baseUrl": "src",
+    "paths": {
+      "@components/*": ["components/*"],
+      "@api/*": ["api/*"],
+      "@constants/*": ["constants/*"],
+      "@hooks/*": ["hooks/*"],
+      "@pages/*": ["pages/*"],
+      "@redux/*": ["redux/*"],
+      "@route/*": ["route/*"],
+      "@styles/*": ["styles/*"],
+      "@assets/*": ["assets/*"],
+      "@context/*": ["context/*"],
+      "@schema/*": ["schema/*"],
+      "@typings": ["types/index"],
+      "@services/*": ["services/*"],
+      "@/*": ["*"]
+    }
+  },
+  "include": ["src", "config.ts", "src/globals.d.ts"]
 }

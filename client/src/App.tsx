@@ -1,199 +1,138 @@
-import React, { useState } from 'react';
-import {
-  Container, Paper, TextField, Button, Box, Typography,
-  Alert, CircularProgress, Card, CardContent, Snackbar,
-  ThemeProvider, createTheme, CssBaseline
-} from '@mui/material';
-import CloudUploadIcon from '@mui/icons-material/CloudUpload';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import axios from 'axios';
-
-const theme = createTheme({
-  palette: {
-    mode: 'light',
-    primary: {
-      main: '#1976d2',
-    },
-  },
-});
-
-interface Claim {
-  name: string;
-  policyId: string;
-  description: string;
+import React, { useState } from "react";
+import { Container, Tabs, Tab, Box } from "@mui/material";
+import Layout from "@components/Layout.js";
+import ClaimForm from "@components/ClaimForm.js";
+import SuccessNotification from "@components/Notifications.js";
+import ClaimList from "@components/ClaimList.js";
+import { ClaimFormData } from "./types/Claim.type.js";
+import apiService from "@services/apiService.js";
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
 }
 
+const TabPanel: React.FC<TabPanelProps> = ({ children, value, index }) => {
+  return (
+    <div hidden={value !== index}>
+      {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+    </div>
+  );
+};
+
 const App: React.FC = () => {
-  const [claim, setClaim] = useState<Claim>({
-    name: '',
-    policyId: '',
-    description: ''
-  });
-  const [file, setFile] = useState<File | null>(null);
+  const [tabValue, setTabValue] = useState(0);
+  const [claims, setClaims] = useState<ClaimFormData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [summary, setSummary] = useState('');
-  const [errors, setErrors] = useState<Record<string, string>>({});
-  const [success, setSuccess] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [notification, setNotification] = useState({
+    open: false,
+    message: "",
+  });
 
-  const validate = (): boolean => {
-    const newErrors: Record<string, string> = {};
-    if (!claim.name.trim()) newErrors.name = 'Name is required';
-    if (!claim.policyId.trim()) newErrors.policyId = 'Policy ID is required';
-    if (!claim.description.trim()) newErrors.description = 'Description is required';
-    if (!file) newErrors.file = 'File is required';
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validate()) return;
-
+  const handleSubmitClaim = async (data: ClaimFormData, file: File) => {
     setLoading(true);
     const formData = new FormData();
-    formData.append('name', claim.name);
-    formData.append('policyId', claim.policyId);
-    formData.append('description', claim.description);
-    if (file) formData.append('file', file);
+    formData.append("name", data.name);
+    formData.append("policyId", data.policyId);
+    formData.append("description", data.description);
+    formData.append("file", file);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/claims', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
+      const response = await apiService.submitClaim(formData);
+      setSummary(response.summary || "");
+      setNotification({
+        open: true,
+        message: "Claim submitted successfully!",
       });
-      setSummary(response.data.summary || '');
-      setSuccess(true);
-      // Reset form
-      setClaim({ name: '', policyId: '', description: '' });
-      setFile(null);
-      setErrors({});
+
+
+      await loadClaims();
+
+
+      setTimeout(() => setTabValue(1), 2000);
     } catch (error) {
-      console.error('Error submitting claim:', error);
-      setErrors({ submit: 'Failed to submit claim. Please try again.' });
+      console.error("Error submitting claim:", error);
+      throw error;
     } finally {
       setLoading(false);
     }
   };
 
-  return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <Container maxWidth="md" sx={{ mt: 4, mb: 4 }}>
-        <Paper elevation={3} sx={{ p: 4 }}>
-          <Typography variant="h4" component="h1" gutterBottom align="center">
-            Insurance Claim Submission
-          </Typography>
-          
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-            <TextField
-              fullWidth
-              label="Full Name"
-              variant="outlined"
-              value={claim.name}
-              onChange={(e) => setClaim({ ...claim, name: e.target.value })}
-              error={!!errors.name}
-              helperText={errors.name}
-              margin="normal"
-              required
-            />
-            
-            <TextField
-              fullWidth
-              label="Policy ID"
-              variant="outlined"
-              value={claim.policyId}
-              onChange={(e) => setClaim({ ...claim, policyId: e.target.value })}
-              error={!!errors.policyId}
-              helperText={errors.policyId}
-              margin="normal"
-              required
-            />
-            
-            <TextField
-              fullWidth
-              multiline
-              rows={4}
-              label="Claim Description"
-              variant="outlined"
-              value={claim.description}
-              onChange={(e) => setClaim({ ...claim, description: e.target.value })}
-              error={!!errors.description}
-              helperText={errors.description}
-              margin="normal"
-              required
-            />
-            
-            <Button
-              variant="outlined"
-              component="label"
-              fullWidth
-              startIcon={file ? <CheckCircleIcon /> : <CloudUploadIcon />}
-              sx={{ mt: 2, mb: 1 }}
-              color={file ? "success" : "primary"}
-            >
-              {file ? file.name : 'Upload File (PDF/Image)'}
-              <input
-                type="file"
-                hidden
-                accept=".pdf,image/*"
-                onChange={(e) => {
-                  const selectedFile = e.target.files?.[0];
-                  if (selectedFile) {
-                    setFile(selectedFile);
-                    setErrors({ ...errors, file: '' });
-                  }
-                }}
-              />
-            </Button>
-            {errors.file && (
-              <Alert severity="error" sx={{ mb: 2 }}>{errors.file}</Alert>
-            )}
-            
-            {errors.submit && (
-              <Alert severity="error" sx={{ mb: 2 }}>{errors.submit}</Alert>
-            )}
-            
-            <Button
-              type="submit"
-              variant="contained"
-              fullWidth
-              disabled={loading}
-              size="large"
-              sx={{ mt: 2, py: 1.5 }}
-            >
-              {loading ? <CircularProgress size={24} color="inherit" /> : 'Submit Claim'}
-            </Button>
-          </Box>
+  const loadClaims = async () => {
+    try {
+      const data = await apiService.getClaims();
+      setClaims(data);
+    } catch (error) {
+      console.error("Error loading claims:", error);
+    }
+  };
 
-          {summary && (
-            <Card sx={{ mt: 3, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.200' }}>
-              <CardContent>
-                <Typography variant="h6" color="primary" gutterBottom>
-                  AI-Generated Summary
-                </Typography>
-                <Typography variant="body1">{summary}</Typography>
-              </CardContent>
-            </Card>
-          )}
-        </Paper>
-        
-        <Snackbar
-          open={success}
-          autoHideDuration={6000}
-          onClose={() => setSuccess(false)}
-          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-        >
-          <Alert 
-            onClose={() => setSuccess(false)} 
-            severity="success" 
-            sx={{ width: '100%' }}
-          >
-            Claim submitted successfully!
-          </Alert>
-        </Snackbar>
+  const handleViewClaim = (id: string) => {
+    console.log("View claim:", id);
+
+  };
+
+  const handleEditClaim = (id: string) => {
+    console.log("Edit claim:", id);
+
+  };
+
+  const handleDeleteClaim = async (id: string) => {
+    if (window.confirm("Are you sure you want to delete this claim?")) {
+      try {
+        await apiService.deleteClaim(id);
+        await loadClaims();
+        setNotification({
+          open: true,
+          message: "Claim deleted successfully!",
+        });
+      } catch (error) {
+        console.error("Error deleting claim:", error);
+      }
+    }
+  };
+
+  React.useEffect(() => {
+    if (tabValue === 1) {
+      loadClaims();
+    }
+  }, [tabValue]);
+
+  return (
+    <Layout>
+      <Container maxWidth="md">
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs value={tabValue} onChange={(_, v) => setTabValue(v)}>
+            <Tab label="Submit Claim" />
+            <Tab label="My Claims" />
+          </Tabs>
+        </Box>
+
+        <TabPanel value={tabValue} index={0}>
+          <ClaimForm
+            onSubmit={handleSubmitClaim}
+            summary={summary}
+            loading={loading}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={1}>
+          <ClaimList
+            claims={claims}
+            onView={handleViewClaim}
+            onEdit={handleEditClaim}
+            onDelete={handleDeleteClaim}
+          />
+        </TabPanel>
+
+        <SuccessNotification
+          open={notification.open}
+          message={notification.message}
+          onClose={() => setNotification({ ...notification, open: false })}
+        />
       </Container>
-    </ThemeProvider>
+    </Layout>
   );
 };
 
