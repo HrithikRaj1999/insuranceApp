@@ -21,15 +21,15 @@ const HeightWrapper = ({
         display: "flex",
         flexDirection: "column",
         overflowY: "scroll",
-        borderRadius: !isMobile ? "20px" : "0px",
+        // borderRadius: !isMobile ? "20px" : "0px",
 
-        mt: isMobile ? "auto" : 2,
-        mb: isMobile ? "auto" : 2,
-        ml: isMobile ? "auto" : 2,
-        mr: isMobile ? "auto" : 2, // marginRight minus!
+        // mt: isMobile ? "auto" : 2,
+        // mb: isMobile ? "auto" : 2,
+        // ml: isMobile ? "auto" : 2,
+        // mr: isMobile ? "auto" : 2, // marginRight minus!
 
-        p: isMobile ? 1 : 2, // <-- smaller padding on mobile, larger on desktop
-        pt: isMobile ? 6 : 2, // <-- smaller padding on mobile, larger on desktop
+        // p: isMobile ? 1 : 2, // <-- smaller padding on mobile, larger on desktop
+        // pt: isMobile ? 6 : 2, // <-- smaller padding on mobile, larger on desktop
         boxSizing: "border-box",
         maxWidth: "100vw",
         ...rest,

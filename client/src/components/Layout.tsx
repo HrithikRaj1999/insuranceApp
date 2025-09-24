@@ -34,7 +34,7 @@ const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <HeightWrapper width={"98%"}>
+      <HeightWrapper>
         <Box
           sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}
         >

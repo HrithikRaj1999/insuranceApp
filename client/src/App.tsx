@@ -43,7 +43,6 @@ const App: React.FC = () => {
   const handleViewClaim = (id: string) => openDialog("view", id);
   const handleEditClaim = (id: string) => openDialog("edit", id);
 
-
   const handleSaved = async () => {
     await loadClaims();
     setNotification({ open: true, message: "Claim updated successfully!" });
@@ -118,7 +117,7 @@ const App: React.FC = () => {
         <TabPanel value={tabValue} index={0}>
           <ClaimForm
             onSubmit={handleSubmitClaim}
-            summary={summary}
+            summary={tabValue === 1 ? summary : null}
             loading={loading}
           />
         </TabPanel>

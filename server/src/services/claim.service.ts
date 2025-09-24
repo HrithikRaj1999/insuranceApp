@@ -1,23 +1,26 @@
-import path from 'path';
-import fs from 'fs';
-import Claim from '../models/claim.model';
-import { uploadToS3, deleteFromS3 } from './s3Service';
-import { generateSummary } from './aiService';
+import path from "path";
+import fs from "fs";
+import Claim from "../models/claim.model";
+import { uploadToS3, deleteFromS3 } from "./s3Service";
+import { generateSummary } from "./aiService";
 
 export type CreateClaimInput = {
   name: string;
   policyId: string;
   description: string;
+  summary?: string;
 };
 
 export type UpdateClaimInput = Partial<CreateClaimInput> & {
+  name?: string;
+  description?: string;
   fileUrl?: string | null;
   fileS3Url?: string | null;
   fileS3Key?: string | null;
   fileLocalPath?: string | null;
 };
 
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === "development";
 
 export async function listClaims() {
   const claims = await Claim.find().sort({ createdAt: -1 });
@@ -71,9 +74,12 @@ export async function updateClaim(
   const updateData: UpdateClaimInput = { ...payload };
 
   if (file) {
-
     if (claim.fileS3Key) {
-      try { await deleteFromS3(claim.fileS3Key); } catch (e) { console.error('S3 delete error:', e); }
+      try {
+        await deleteFromS3(claim.fileS3Key);
+      } catch (e) {
+        console.error("S3 delete error:", e);
+      }
     }
 
     const uploadResult = await uploadToS3(file);
@@ -82,8 +88,20 @@ export async function updateClaim(
     updateData.fileS3Key = uploadResult.key;
     updateData.fileLocalPath = isDev ? uploadResult.localPath || null : null;
   }
+  // If description exists and no summary is passed, generate one
+  if (updateData.description) {
+    updateData.summary = await generateSummary(updateData.description);
+  }
 
-  return Claim.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+  // If summary was not passed and no description to generate from,
+  // then do not add summary to update object (keeps old DB value)
+  if (updateData.summary === undefined) {
+    delete updateData.summary;
+  }
+  return Claim.findByIdAndUpdate(id, updateData, {
+    new: true,
+    runValidators: true,
+  });
 }
 
 export async function deleteClaim(id: string) {
@@ -91,13 +109,21 @@ export async function deleteClaim(id: string) {
   if (!claim) return null;
 
   if (claim.fileS3Key) {
-    try { await deleteFromS3(claim.fileS3Key); } catch (e) { console.error('S3 delete error:', e); }
+    try {
+      await deleteFromS3(claim.fileS3Key);
+    } catch (e) {
+      console.error("S3 delete error:", e);
+    }
   }
 
   if (claim.fileLocalPath && isDev) {
     const localPath = path.join(process.cwd(), claim.fileLocalPath);
     if (fs.existsSync(localPath)) {
-      try { fs.unlinkSync(localPath); } catch (e) { console.error('Local delete error:', e); }
+      try {
+        fs.unlinkSync(localPath);
+      } catch (e) {
+        console.error("Local delete error:", e);
+      }
     }
   }
 

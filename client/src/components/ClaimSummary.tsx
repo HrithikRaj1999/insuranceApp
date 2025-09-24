@@ -27,7 +27,19 @@ const ClaimSummary: React.FC<ClaimSummaryProps> = ({
             AI-Generated Summary
           </Typography>
         </Box>
-        <Typography variant="body1">{summary ?? defaultValue}</Typography>
+
+        {/* Scrollable area */}
+        <Box
+          sx={{
+            maxHeight: 200, 
+            overflowY: "auto", 
+            pr: 1, // add a bit of padding so scrollbar doesn’t cover text
+          }}
+        >
+          <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>
+            {summary ?? defaultValue}
+          </Typography>
+        </Box>
       </CardContent>
     </Card>
   );

@@ -141,7 +141,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           file={file}
           onFileChange={handleFileChange}
           error={errors.file}
-          disabled={loading || readOnly} // also disable file in read-only mode
+          disabled={loading || readOnly}
         />
 
         {errors.submit && (
