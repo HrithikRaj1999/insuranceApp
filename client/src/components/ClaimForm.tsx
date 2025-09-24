@@ -5,8 +5,7 @@ import {
   Button,
   Box,
   Typography,
-  Alert,
-  CircularProgress,
+  Alert
 } from "@mui/material";
 import { validateClaimForm } from "@/utils/validators.js";
 import FileUpload from "./FileUpload.js";
@@ -71,7 +70,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
     }
     try {
       await onSubmit(formData, file);
-      // If this form is used for "Create", reset afterwards:
       if (!initial) {
         setFormData({ name: "", policyId: "", description: "" });
         setFile(null);
