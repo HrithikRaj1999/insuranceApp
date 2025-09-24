@@ -53,7 +53,7 @@ const ClaimList: React.FC<ClaimListProps> = ({
         </TableHead>
         <TableBody>
           {claims.map((claim) => (
-            <TableRow key={claim.id}>
+            <TableRow key={claim._id}>
               <TableCell>{claim.policyId}</TableCell>
               <TableCell>{claim.name}</TableCell>
               <TableCell>
@@ -68,21 +68,21 @@ const ClaimList: React.FC<ClaimListProps> = ({
               </TableCell>
               <TableCell align="center">
                 <IconButton
-                  onClick={() => onView(claim.id!)}
+                  onClick={() => onView(claim._id!)}
                   size="small"
                   color="primary"
                 >
                   <Visibility />
                 </IconButton>
                 <IconButton
-                  onClick={() => onEdit(claim.id!)}
+                  onClick={() => onEdit(claim._id!)}
                   size="small"
                   color="default"
                 >
                   <Edit />
                 </IconButton>
                 <IconButton
-                  onClick={() => onDelete(claim.id!)}
+                  onClick={() => onDelete(claim._id!)}
                   size="small"
                   color="error"
                 >

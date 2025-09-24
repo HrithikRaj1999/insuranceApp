@@ -1,5 +1,5 @@
 export interface Claim {
-  id?: string;
+  _id?: string;
   name: string;
   policyId: string;
   description: string;

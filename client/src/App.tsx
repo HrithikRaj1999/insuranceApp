@@ -6,6 +6,7 @@ import SuccessNotification from "@components/Notifications.js";
 import ClaimList from "@components/ClaimList.js";
 import { ClaimFormData } from "./types/Claim.type.js";
 import apiService from "@services/apiService.js";
+import ClaimDialog from "@components/ClaimDialog.js";
 interface TabPanelProps {
   children?: React.ReactNode;
   index: number;
@@ -29,7 +30,24 @@ const App: React.FC = () => {
     open: false,
     message: "",
   });
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogMode, setDialogMode] = useState<"view" | "edit">("view");
+  const [activeId, setActiveId] = useState<string | null>(null);
 
+  const openDialog = (mode: "view" | "edit", id: string) => {
+    setDialogMode(mode);
+    setActiveId(id);
+    setDialogOpen(true);
+  };
+
+  const handleViewClaim = (id: string) => openDialog("view", id);
+  const handleEditClaim = (id: string) => openDialog("edit", id);
+
+
+  const handleSaved = async () => {
+    await loadClaims();
+    setNotification({ open: true, message: "Claim updated successfully!" });
+  };
   const handleSubmitClaim = async (data: ClaimFormData, file: File) => {
     setLoading(true);
     const formData = new FormData();
@@ -46,9 +64,7 @@ const App: React.FC = () => {
         message: "Claim submitted successfully!",
       });
 
-
       await loadClaims();
-
 
       setTimeout(() => setTabValue(1), 2000);
     } catch (error) {
@@ -66,16 +82,6 @@ const App: React.FC = () => {
     } catch (error) {
       console.error("Error loading claims:", error);
     }
-  };
-
-  const handleViewClaim = (id: string) => {
-    console.log("View claim:", id);
-
-  };
-
-  const handleEditClaim = (id: string) => {
-    console.log("Edit claim:", id);
-
   };
 
   const handleDeleteClaim = async (id: string) => {
@@ -125,6 +131,13 @@ const App: React.FC = () => {
             onDelete={handleDeleteClaim}
           />
         </TabPanel>
+        <ClaimDialog
+          open={dialogOpen}
+          mode={dialogMode}
+          claimId={activeId}
+          onClose={() => setDialogOpen(false)}
+          onSaved={handleSaved}
+        />
 
         <SuccessNotification
           open={notification.open}
