@@ -1,138 +1,233 @@
-import React from "react";
+
+import React, { useEffect, useState } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
-  Container,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Typography,
   AppBar,
   Toolbar,
-  Typography,
-  Link,
-  Button,
-  Stack,
-  Paper,
+  useTheme,
+  useMediaQuery,
+  Divider,
+  Container,
+  Chip,
+  Tooltip,
 } from "@mui/material";
-import { ThemeProvider, CssBaseline } from "@mui/material";
-import { theme } from "@/config/theme.js";
-import HeightWrapper from "./HeightWrapper.js";
+import {
+  Menu as MenuIcon,
+  Dashboard as DashboardIcon,
+  Description as ClaimIcon,
+  List as ListIcon,
+  Assessment as ReportsIcon,
+  Settings as SettingsIcon,
+  Close as CloseIcon,
+  DarkMode as DarkIcon,
+  LightMode as LightIcon,
+} from "@mui/icons-material";
+import { useThemeMode } from "@/context/ThemeContext";
+import { brandGradient } from "@/config/makeTheme";
+import { navItems } from "@route/RouteElements.js";
 
-interface LayoutProps {
-  children: React.ReactNode;
-  footer?: {
-    developerName?: string;
-    pdfHref?: string;
-    appDescription?: string;
-    year?: number;
+const iconMap: Record<string, React.ElementType> = {
+  "/dashboard": DashboardIcon,
+  "/submit": ClaimIcon,
+  "/claims": ListIcon,
+  "/reports": ReportsIcon,
+  "/settings": SettingsIcon,
+};
+
+const drawerWidth = 280;
+
+const Layout: React.FC = () => {
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const theme = useTheme();
+  const { mode, toggle } = useThemeMode();
+
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isDesktop = !isMobile;
+
+  useEffect(() => {
+    setDrawerOpen(isDesktop);
+  }, [isDesktop]);
+
+  const handleNavigation = (path: string, available: boolean) => {
+    if (!available) return;
+    navigate(path);
+    if (isMobile) setDrawerOpen(false);
   };
-}
 
-const HEADER_HEIGHT = 50; // px
-const FOOTER_HEIGHT = 60; // px
+  const headerBg = theme.palette.background.paper;
 
-const Layout: React.FC<LayoutProps> = ({ children, footer }) => {
-  const {
-    developerName = "Hrithik Raj",
-    pdfHref = "/assets/Hrithik_Raj_Software_developer.pdf",
-    appDescription = "Insurance claim assistant — smart, fast and accurate.",
-    year = new Date().getFullYear(),
-  } = footer || {};
+  const drawerContent = (
+    <>
+      {/* Drawer Header */}
+      <Box
+        sx={{
+          p: 2,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <img src="/vite.svg" width={32} height={32} alt="logo" />
+          <Typography variant="h6" sx={{ fontWeight: 700 }}>
+            Happy Claim
+          </Typography>
+        </Box>
+        {isMobile && (
+          <IconButton onClick={() => setDrawerOpen(false)}>
+            <CloseIcon />
+          </IconButton>
+        )}
+      </Box>
+
+      <Box sx={{ flex: 1, p: 2 }}>
+        <List>
+          {navItems.map((item) => {
+            const Icon = iconMap[item.path];
+            const isActive = location.pathname === item.path;
+
+            return (
+              <ListItem key={item.path} disablePadding sx={{ mb: 1 }}>
+                <ListItemButton
+                  onClick={() => handleNavigation(item.path, item.available)}
+                  disabled={!item.available}
+                  sx={{
+                    borderRadius: 2,
+                    bgcolor: isActive
+                      ? theme.palette.action.selected
+                      : "transparent",
+                    "&:hover": { bgcolor: theme.palette.action.hover },
+                    opacity: item.available ? 1 : 0.6,
+                    transition: "all 0.2s ease",
+                  }}
+                >
+                  <ListItemIcon sx={{ minWidth: 40 }}>
+                    <Icon color={isActive ? "primary" : "action"} />
+                  </ListItemIcon>
+                  <ListItemText
+                    primary={
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <span>{item.label}</span>
+                        {!item.available && (
+                          <Chip
+                            label="Soon"
+                            size="small"
+                            sx={{ height: 18, fontSize: "0.65rem" }}
+                          />
+                        )}
+                      </Box>
+                    }
+                  />
+                </ListItemButton>
+              </ListItem>
+            );
+          })}
+        </List>
+      </Box>
+    </>
+  );
 
   return (
-    <ThemeProvider theme={theme}>
-      <CssBaseline />
-      <HeightWrapper>
-        <Box sx={{ minHeight: "100dvh" }}>
-          <AppBar
-            position="fixed"
-            elevation={0}
-            sx={{ height: HEADER_HEIGHT, justifyContent: "center" }}
-          >
-            <Toolbar sx={{ minHeight: HEADER_HEIGHT }}>
-              <Typography
-                variant="h6"
-                component="div"
-                sx={{
-                  flexGrow: 1,
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                }}
-              >
-                <img src="/vite.svg" width={32} height={32} alt="logo" />
-                Happy Claim
+    <Box
+      sx={{
+        display: "flex",
+        minHeight: "100vh",
+        bgcolor: theme.palette.background.default,
+        color: theme.palette.text.primary,
+      }}
+    >
+      {/* Mobile App Bar */}
+      {isMobile && (
+        <AppBar
+          position="fixed"
+          sx={{ zIndex: theme.zIndex.drawer + 1, backgroundColor: headerBg }}
+        >
+          <Toolbar sx={{ gap: 1 }}>
+            <IconButton edge="start" onClick={() => setDrawerOpen(true)}>
+              <MenuIcon />
+            </IconButton>
+            <Typography variant="h6" sx={{ flexGrow: 1 }}>
+              Happy Claim
+            </Typography>
+
+            {/* quick theme toggle */}
+            <Tooltip
+              title={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
+            >
+              <IconButton onClick={toggle}>
+                {mode === "light" ? <DarkIcon /> : <LightIcon />}
+              </IconButton>
+            </Tooltip>
+          </Toolbar>
+        </AppBar>
+      )}
+
+      {/* Navigation Drawer */}
+      <Drawer
+        variant={isDesktop ? "permanent" : "temporary"}
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        sx={{
+          width: drawerWidth,
+          flexShrink: 0,
+          "& .MuiDrawer-paper": {
+            width: drawerWidth,
+            boxSizing: "border-box",
+            border: "none",
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Main Content */}
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          width: { sm: `calc(100% - ${drawerWidth}px)` },
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        {/* Desktop Top Bar */}
+        {isDesktop && (
+          <AppBar position="sticky">
+            <Toolbar sx={{ backgroundColor: headerBg }}>
+              <Typography variant="h6" sx={{ flexGrow: 1 }}>
+                {navItems.find((n) => n.path === location.pathname)?.label ??
+                  "Overview"}
               </Typography>
+              <Tooltip
+                title={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
+              >
+                <IconButton onClick={toggle}>
+                  {mode === "light" ? <DarkIcon /> : <LightIcon />}
+                </IconButton>
+              </Tooltip>
             </Toolbar>
           </AppBar>
+        )}
 
-          {/* Top spacer to offset fixed header */}
-          <Box sx={{ height: HEADER_HEIGHT }} />
-
-          {/* Main content with bottom padding to avoid footer overlap */}
-          <Container
-            component="main"
-            sx={{
-              py: 4,
-              pb: `calc(${FOOTER_HEIGHT}px + 16px)`,
-              minHeight: `calc(100dvh - ${HEADER_HEIGHT}px - ${FOOTER_HEIGHT}px)`,
-            }}
-          >
-            {children}
-          </Container>
-
-          {/* Sticky Footer */}
-          <Paper
-            component="footer"
-            square
-            elevation={3}
-            sx={{
-              position: "fixed",
-              left: 0,
-              right: 0,
-              bottom: 0,
-              height: FOOTER_HEIGHT,
-              borderTop: 1,
-              borderColor: "divider",
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Container>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={2}
-                alignItems={{ xs: "flex-start", sm: "center" }}
-                justifyContent="space-between"
-              >
-                <Box>
-                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                    {appDescription}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    © {year} • Developed by{" "}
-                    <Link
-                      href={pdfHref}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      underline="hover"
-                    >
-                      {developerName}
-                    </Link>
-                  </Typography>
-                </Box>
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="outlined"
-                    href={pdfHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    View Developer PDF
-                  </Button>
-                </Stack>
-              </Stack>
-            </Container>
-          </Paper>
-        </Box>
-      </HeightWrapper>
-    </ThemeProvider>
+        <Container maxWidth="xl" sx={{ flexGrow: 1, py: 3 }}>
+          <Outlet />
+        </Container>
+      </Box>
+    </Box>
   );
 };
 

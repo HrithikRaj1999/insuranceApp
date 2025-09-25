@@ -33,7 +33,7 @@ export class PolicyService {
     return !!doc;
   }
   static async create(input: CreatePolicyInput): Promise<IPolicy> {
-    // enforce unique policyNumber
+
     const exists = await PolicyModel.findOne({
       policyNumber: input.policyNumber,
     });
@@ -87,7 +87,7 @@ export class PolicyService {
     id: string,
     input: UpdatePolicyInput
   ): Promise<IPolicy | null> {
-    // if policyNumber changes, enforce uniqueness
+
     if (input.policyNumber) {
       const exists = await PolicyModel.findOne({
         policyNumber: input.policyNumber,

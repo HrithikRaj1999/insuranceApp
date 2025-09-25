@@ -56,9 +56,9 @@ class ApiService {
     await this.api.delete(`/api/claims/${id}`);
   }
 
-  // ================
-  // Policy
-  // ============
+
+
+
   async policyExists(policyNumber: string): Promise<boolean> {
     if (!policyNumber) return false;
     try {

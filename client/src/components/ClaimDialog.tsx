@@ -12,6 +12,7 @@ import {
 import { Claim } from "@/types/Claim.type.js";
 import apiService from "@services/apiService.js";
 import ClaimForm from "@components/ClaimForm.js";
+import Loader from "@/utils/Loader";
 
 type Mode = "view" | "edit";
 
@@ -78,9 +79,7 @@ const ClaimDialog: React.FC<Props> = ({
 
       <DialogContent dividers>
         {loading || !claim ? (
-          <Stack alignItems="center" py={4}>
-            <CircularProgress size={24} />
-          </Stack>
+          <Loader />
         ) : (
           <>
             <ClaimForm

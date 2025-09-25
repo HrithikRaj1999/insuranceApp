@@ -94,13 +94,13 @@ export async function updateClaim(
     updateData.fileS3Key = uploadResult.key;
     updateData.fileLocalPath = isDev ? uploadResult.localPath || null : null;
   }
-  // If description exists and no summary is passed, generate one
+
   if (updateData.description) {
     updateData.summary = await generateSummary(updateData.description);
   }
 
-  // If summary was not passed and no description to generate from,
-  // then do not add summary to update object (keeps old DB value)
+
+
   if (updateData.summary === undefined) {
     delete updateData.summary;
   }
