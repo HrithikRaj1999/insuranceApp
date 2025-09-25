@@ -2,6 +2,7 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
+    "noEmit": true,
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "baseUrl": "src",
@@ -26,5 +27,5 @@
     "esModuleInterop": true,
     "skipLibCheck": true
   },
-  "include": ["src", "config.ts", "src/globals.d.ts", ".tsx"]
+  "include": ["src/", "config.ts", "env.d.ts", "src/globals.d.ts", ".tsx"]
 }

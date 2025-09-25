@@ -13,7 +13,7 @@ import {
 } from "@mui/material";
 import { formatDate } from "@/utils/validators.js";
 import { Delete, Edit, Visibility } from "@mui/icons-material";
-import { Claim } from "@/types/Claim.type.js";
+import { Claim } from "@/types";
 
 interface ClaimListProps {
   claims: Claim[];

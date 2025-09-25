@@ -35,8 +35,8 @@ import {
 import { keyframes, alpha } from "@mui/system";
 import { validateClaimForm } from "@/utils/validators.js";
 import ClaimSummary from "./ClaimSummary.js";
-import { Claim, ClaimFormData, FormErrors } from "@/types/Claim.type.js";
 import apiService from "@services/apiService.js";
+import { Claim, ClaimFormData, FormErrors } from "@typings";
 
 interface ClaimFormProps {
   onSubmit: (data: ClaimFormData, files: File[]) => void;

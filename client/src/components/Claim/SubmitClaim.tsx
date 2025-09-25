@@ -1,6 +1,6 @@
 import React from "react";
 import apiService from "@services/apiService";
-import type { ClaimFormData } from "@/types/Claim.type";
+import type { ClaimFormData } from "@/types";
 import ClaimForm from "./ClaimForm";
 
 const SubmitClaim: React.FC = () => {

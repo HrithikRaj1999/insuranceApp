@@ -14,11 +14,9 @@ import {
   AppBar,
   Toolbar,
   useTheme,
-  useMediaQuery,
-  Divider,
-  Container,
+  useMediaQuery, Container,
   Chip,
-  Tooltip,
+  Tooltip
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -32,7 +30,6 @@ import {
   LightMode as LightIcon,
 } from "@mui/icons-material";
 import { useThemeMode } from "@/context/ThemeContext";
-import { brandGradient } from "@/config/makeTheme";
 import { navItems } from "@route/RouteElements.js";
 
 const iconMap: Record<string, React.ElementType> = {

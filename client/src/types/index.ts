@@ -1,1 +1,1 @@
-export * from './Claim.type.ts';
+export * from "./claim.type";

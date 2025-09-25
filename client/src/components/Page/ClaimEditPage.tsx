@@ -1,7 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiService from "@services/apiService.js";
-import type { ClaimFormData } from "@/types/Claim.type.js";
+import type { ClaimFormData } from "@/types";
 import Loader from "@components/UI/Loader";
 
 const ClaimForm = React.lazy(() => import("@components/Claim/ClaimForm"));
