@@ -12,7 +12,6 @@ OPENAI_API_KEY=sk-proj-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx
 OPENAI_MODEL=gpt-3.5-turbo
 OPENAI_MAX_TOKENS=100
 OPENAI_TEMPERATURE=0.3
-# Hard gate to prevent paid usage:
 ALLOW_OPENAI_PAID=false
 USE_MOCK_AI=true
 
@@ -22,11 +21,5 @@ AWS_SECRET_ACCESS_KEY=your-secret-key
 S3_BUCKET_NAME=insurance-claims-bucket
 AWS_S3_PREFIX=claims
 S3_OBJECT_ACL=private
-# If true, API returns time-limited signed URLs for S3 objects
 USE_SIGNED_URLS=true
-
-########################################
-# CORS
-########################################
-# Comma-separated list (no spaces) e.g. http://localhost:3000,https://yourdomain.com
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS=http://localhost:3000,http://localhost:5173
