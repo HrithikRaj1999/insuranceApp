@@ -1,53 +1,53 @@
 #!/bin/bash
-set -e
+set -euxo pipefail
 
-# Update system
+# ----- Variables injected by Terraform -----
+PROJECT_NAME=${project_name}
+AWS_REGION=${aws_region}
+S3_BUCKET_NAME=${s3_bucket_name}
+GITHUB_REPO=${github_repo}
+
+# ----- Update & prerequisites -----
 apt-get update
-apt-get upgrade -y
+apt-get install -y ca-certificates curl git
 
-# Install Docker
-curl -fsSL https://get.docker.com -o get-docker.sh
-sh get-docker.sh
+# ----- Docker official apt repo -----
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+
+. /etc/os-release || true
+CODENAME="$UBUNTU_CODENAME"
+if [ -z "$CODENAME" ]; then CODENAME="$VERSION_CODENAME"; fi
+
+ARCH="$(dpkg --print-architecture)"
+
+cat >/etc/apt/sources.list.d/docker.list <<EOF
+deb [arch=$ARCH signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $CODENAME stable
+EOF
+
+apt-get update
+apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Let 'ubuntu' run docker without sudo
 usermod -aG docker ubuntu
+systemctl enable --now docker
 
-# Install Docker Compose
-curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-chmod +x /usr/local/bin/docker-compose
-
-# Install Git
-apt-get install -y git
-
-# Clone repository
+# ----- Clone repo (idempotent) -----
 cd /home/ubuntu
-git clone ${github_repo} insurance-app
-cd insurance-app
+if [ ! -d "insuranceApp" ]; then
+  git clone "$GITHUB_REPO" insuranceApp
+  chown -R ubuntu:ubuntu insuranceApp
+fi
 
-# Create .env file
-cat > .env <<EOF
-NODE_ENV=production
-AWS_REGION=${AWS::Region}
-S3_BUCKET_NAME=${project_name}-uploads
-EOF
+# ----- Build Frontend Docker Image -----
+cd /home/ubuntu/insuranceApp/client
+docker build -t fe:latest .
 
-# Start application
-docker-compose up -d
+# ----- Build Backend Docker Image -----
+cd /home/ubuntu/insuranceApp/server
+docker build -t be:latest .
 
-# Setup auto-start on reboot
-cat > /etc/systemd/system/insurance-app.service <<EOF
-[Unit]
-Description=Insurance App
-After=docker.service
-Requires=docker.service
-
-[Service]
-Type=simple
-WorkingDirectory=/home/ubuntu/insurance-app
-ExecStart=/usr/local/bin/docker-compose up
-ExecStop=/usr/local/bin/docker-compose down
-Restart=always
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-systemctl enable insurance-app
+# ----- Start Docker Compose -----
+cd /home/ubuntu/insuranceApp/docker
+docker compose up -d
