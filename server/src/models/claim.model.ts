@@ -20,10 +20,10 @@ const ClaimSchema: Schema = new Schema(
     policy: { type: Schema.Types.ObjectId, ref: "Policy", required: true },
     description: { type: String, required: true },
     summary: { type: String },
-    fileUrl: { type: String },
-    fileS3Url: { type: String },
-    fileS3Key: { type: String },
-    fileLocalPath: { type: String },
+    fileUrls: { type: [String], default: null },
+    fileS3Urls: { type: [String], default: null },
+    fileS3Keys: { type: [String], default: null },
+    fileLocalPaths: { type: [String], default: null },
   },
   { timestamps: true }
 );

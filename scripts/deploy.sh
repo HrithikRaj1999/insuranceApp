@@ -13,6 +13,6 @@ docker-compose up -d
 
 # Health check
 sleep 10
-curl -f http://localhost:5000/api/health || exit 1
+curl -f http://localhost:8080/api/health || exit 1
 
 echo "Deployment completed successfully!"

@@ -1,16 +1,17 @@
-import multer from 'multer';
-import path from 'path';
-import fs from 'fs';
+import multer from "multer";
+import path from "path";
+import fs from "fs";
+
+const uploadRoot = path.resolve(process.cwd(), "temp-uploads");
 
 const storage = multer.diskStorage({
   destination: (_req, _file, cb) => {
-    const uploadDir = 'temp-uploads';
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    cb(null, uploadDir);
+    if (!fs.existsSync(uploadRoot)) fs.mkdirSync(uploadRoot, { recursive: true });
+    cb(null, uploadRoot);
   },
   filename: (_req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, file.fieldname + "-" + uniqueSuffix + path.extname(file.originalname));
   },
 });
 
@@ -23,6 +24,6 @@ export const upload = multer({
     const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
     const mimetype = allowedTypes.test(file.mimetype);
     if (mimetype && extname) cb(null, true);
-    else cb(new Error('Only images and PDFs are allowed'));
+    else cb(new Error("Only images and PDFs are allowed"));
   },
 });

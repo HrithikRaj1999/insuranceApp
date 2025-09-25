@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState, useCallback } from "react";
+import React, { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import debounce from "lodash/debounce";
 import {
@@ -16,6 +16,11 @@ import {
   Divider,
   Container,
   useTheme,
+  List,
+  ListItem,
+  ListItemText,
+  IconButton,
+  Stack,
 } from "@mui/material";
 import {
   Person as PersonIcon,
@@ -25,20 +30,20 @@ import {
   Error as ErrorIcon,
   Upload as UploadIcon,
   Send as SendIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { keyframes, alpha } from "@mui/system";
 import { validateClaimForm } from "@/utils/validators.js";
-import FileUpload from "./FileUpload.js";
 import ClaimSummary from "./ClaimSummary.js";
 import { Claim, ClaimFormData, FormErrors } from "@/types/Claim.type.js";
 import apiService from "@services/apiService.js";
 
 interface ClaimFormProps {
-  onSubmit: (data: ClaimFormData, file: File | null) => void;
+  onSubmit: (data: ClaimFormData, files: File[]) => void;
   summary: string;
   loading: boolean;
   initial?: Partial<Claim>;
-  mode?: "view" | "edit";
+  mode?: "view" | "edit" | "create";
 }
 
 const MIN_POLICY_LENGTH = 6;
@@ -70,13 +75,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
     policyId: initial?.policy?.policyNumber ?? "",
     description: initial?.description ?? "",
   }));
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [errors, setErrors] = useState<FormErrors>({});
   const [policyChecking, setPolicyChecking] = useState(false);
   const [policyValid, setPolicyValid] = useState<boolean | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const readOnly = mode === "view";
   const HideHeaderForm = mode === "view" || mode === "edit";
+
   const checkPolicyExists = useCallback(async (id: string) => {
     if (!id || id.length < MIN_POLICY_LENGTH) return;
     setPolicyChecking(true);
@@ -117,14 +123,30 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
     };
 
-  const handleFileChange = (newFile: File | null) => {
-    setFile(newFile);
-    if (newFile && errors.file) setErrors((prev) => ({ ...prev, file: "" }));
+  const pickFiles = (list: FileList | null) => {
+    if (!list) return;
+    const next: File[] = [];
+    for (let i = 0; i < list.length; i++) {
+      const f = list.item(i);
+      if (!f) continue;
+      if (f.type !== "application/pdf") continue;
+      next.push(f);
+    }
+    const merged = [...files, ...next].slice(0, 10);
+    setFiles(merged);
+    if (merged.length && (errors as any).file) {
+      setErrors((prev) => ({ ...prev, file: "" }));
+    }
+  };
+
+  const removeFileAt = (idx: number) => {
+    setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validateClaimForm(formData, file);
+    const firstFile = files[0] ?? null;
+    const validationErrors = validateClaimForm(formData, firstFile);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       return;
@@ -144,16 +166,17 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       setPolicyChecking(false);
     }
     try {
-      await onSubmit(formData, file);
+      await onSubmit(formData, files);
       setSubmitSuccess(true);
       if (!initial) {
         setFormData({ name: "", policyId: "", description: "" });
-        setFile(null);
+        setFiles([]);
         setPolicyValid(null);
       }
       setErrors({});
       setTimeout(() => navigate("/claims"), 1500);
-    } catch {
+    } catch (error) {
+      console.error(error);
       setErrors({ submit: "Failed to submit claim. Please try again." });
     }
   };
@@ -190,7 +213,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
         )}
 
         <>
-          {" "}
           <Box sx={{ mb: 4, textAlign: "center" }}>
             <Typography
               variant="h3"
@@ -352,7 +374,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               sx={{
                 p: 3,
                 borderStyle: "dashed",
-                borderColor: errors.file ? theme.palette.error.main : "divider",
+                borderColor: (errors as any).file
+                  ? theme.palette.error.main
+                  : "divider",
                 borderRadius: 2,
                 bgcolor: theme.palette.background.default,
                 transition: "all 0.3s ease",
@@ -370,15 +394,67 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               >
                 <UploadIcon color="action" />
                 <Typography variant="subtitle1" fontWeight={600}>
-                  Upload Supporting Documents
+                  Upload Supporting Documents (PDF, up to 10)
                 </Typography>
               </Box>
-              <FileUpload
-                file={file}
-                onFileChange={handleFileChange}
-                error={errors.file}
-                disabled={loading || readOnly}
-              />
+
+              <Stack
+                direction={{ xs: "column", sm: "row" }}
+                spacing={2}
+                alignItems="center"
+              >
+                <Button
+                  variant="outlined"
+                  component="label"
+                  disabled={loading || readOnly}
+                >
+                  Choose PDFs
+                  <input
+                    type="file"
+                    hidden
+                    accept="application/pdf"
+                    multiple
+                    onChange={(e) => pickFiles(e.target.files)}
+                  />
+                </Button>
+                <Typography variant="body2" color="text.secondary">
+                  {files.length} selected
+                </Typography>
+              </Stack>
+
+              {files.length > 0 && (
+                <List
+                  dense
+                  sx={{
+                    mt: 2,
+                    bgcolor: alpha(theme.palette.background.paper, 0.4),
+                    borderRadius: 1,
+                  }}
+                >
+                  {files.map((f, idx) => (
+                    <ListItem
+                      key={`${f.name}-${idx}`}
+                      secondaryAction={
+                        !readOnly && (
+                          <IconButton
+                            edge="end"
+                            onClick={() => removeFileAt(idx)}
+                          >
+                            <DeleteIcon fontSize="small" />
+                          </IconButton>
+                        )
+                      }
+                      sx={{ px: 1 }}
+                    >
+                      <ListItemText
+                        primary={f.name}
+                        secondary={`${(f.size / 1024 / 1024).toFixed(2)} MB`}
+                        primaryTypographyProps={{ noWrap: true }}
+                      />
+                    </ListItem>
+                  ))}
+                </List>
+              )}
             </Paper>
           </Box>
 

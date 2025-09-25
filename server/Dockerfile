@@ -15,6 +15,6 @@ COPY package*.json ./
 RUN npm ci --only=production
 COPY --from=builder /app/dist ./dist
 RUN mkdir -p uploads temp-uploads
-EXPOSE 5000
+EXPOSE 8080
 ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "dist/server.js"]

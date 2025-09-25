@@ -19,6 +19,7 @@ interface ClaimListProps {
   claims: Claim[];
   onView: (id: string) => void;
   onEdit: (id: string) => void;
+  loading: Boolean;
   onDelete: (id: string) => void;
 }
 

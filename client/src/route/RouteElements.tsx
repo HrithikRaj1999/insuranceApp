@@ -1,14 +1,14 @@
-import Loader from "@/utils/Loader";
+import Loader from "@components/UI/Loader";
 import Layout from "@components/Layout.js";
 import { lazy, Suspense } from "react";
 import { Navigate } from "react-router-dom";
 
-const SubmitClaimPage = lazy(() => import("@components/SubmitClaim"));
-const ComingSoon = lazy(() => import("@components/ComingSoon"));
-const ClaimListPage = lazy(() => import("@components/ClaimListPage"));
-const ClaimViewPage = lazy(() => import("@components/ClaimViewPage"));
-const SettingsPage = lazy(() => import("@components/SettingsPage"));
-const ClaimEditPage = lazy(() => import("@components/ClaimEditPage"));
+const SubmitClaimPage = lazy(() => import("@components/Claim/SubmitClaim"));
+const ComingSoon = lazy(() => import("@components/Page/ComingSoon"));
+const ClaimListPage = lazy(() => import("@components/Page/ClaimListPage"));
+const ClaimViewPage = lazy(() => import("@components/Page/ClaimViewPage"));
+const SettingsPage = lazy(() => import("@components/Page/SettingsPage"));
+const ClaimEditPage = lazy(() => import("@components/Page/ClaimEditPage"));
 
 export const navItems = [
   { label: "Dashboard", path: "/dashboard", available: true },

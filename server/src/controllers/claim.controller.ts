@@ -8,7 +8,7 @@ import {
 } from "../services/claim.service";
 import { getSignedUrl } from "../services/s3Service";
 import policyModel from "../models/policy.model";
-import { ObjectId, Types } from "mongoose";
+import { Types } from "mongoose";
 
 const errMsg = (e: unknown, fallback = "Internal server error") =>
   e instanceof Error ? e.message : fallback;
@@ -21,9 +21,16 @@ export async function getAllClaims(req: Request, res: Response) {
 
     const claimsWithUrls = await Promise.all(
       claims.map(async (claim) => {
-        const obj = claim.toObject();
-        if (obj.fileS3Key && useSigned) {
-          obj.fileUrl = await getSignedUrl(obj.fileS3Key);
+        const obj = claim.toObject() as any;
+        if (useSigned) {
+          if (obj.fileS3Key) {
+            obj.fileUrl = await getSignedUrl(obj.fileS3Key);
+          }
+          if (Array.isArray(obj.fileS3Keys) && obj.fileS3Keys.length) {
+            obj.fileUrls = await Promise.all(
+              obj.fileS3Keys.map((k: string) => getSignedUrl(k))
+            );
+          }
         }
         return obj;
       })
@@ -41,9 +48,16 @@ export async function getClaim(req: Request, res: Response) {
     const claim = await getClaimById(req.params.id);
     if (!claim) return res.status(404).json({ error: "Claim not found" });
 
-    const obj = claim.toObject();
-    if (obj.fileS3Key && useSigned) {
-      obj.fileUrl = await getSignedUrl(obj.fileS3Key);
+    const obj = claim.toObject() as any;
+    if (useSigned) {
+      if (obj.fileS3Key) {
+        obj.fileUrl = await getSignedUrl(obj.fileS3Key);
+      }
+      if (Array.isArray(obj.fileS3Keys) && obj.fileS3Keys.length) {
+        obj.fileUrls = await Promise.all(
+          obj.fileS3Keys.map((k: string) => getSignedUrl(k))
+        );
+      }
     }
 
     res.json(obj);
@@ -57,7 +71,7 @@ export async function createClaimHandler(req: Request, res: Response) {
   try {
     const { name, policyId, description } = req.body as {
       name: string;
-      policyId: string; // policy number from UI
+      policyId: string;
       description: string;
     };
 
@@ -74,9 +88,11 @@ export async function createClaimHandler(req: Request, res: Response) {
         .json({ message: "Invalid Policy ID. Policy not found." });
     }
 
+    const files = (req.files as Express.Multer.File[]) || [];
+
     const saved = await createClaim(
       { name, description, policy: policyDoc._id as Types.ObjectId },
-      req.file || undefined
+      files.length ? files.slice(0, 10) : undefined
     );
 
     return res.status(201).json(saved);
@@ -88,11 +104,14 @@ export async function createClaimHandler(req: Request, res: Response) {
 
 export async function updateClaimHandler(req: Request, res: Response) {
   try {
+    const files = (req.files as Express.Multer.File[]) || [];
+
     const updated = await updateClaim(
       req.params.id,
       { ...req.body },
-      req.file || undefined
+      files.length ? files.slice(0, 10) : undefined
     );
+
     if (!updated) return res.status(404).json({ error: "Claim not found" });
     res.json(updated);
   } catch (e) {

@@ -8,7 +8,7 @@ import policyRoutes from "./routes/policy.route";
 dotenv.config();
 
 const app: Express = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 8080;
 const allowedOrigins = (process.env.CORS_ORIGINS?? "").split(",");
 
 app.use(

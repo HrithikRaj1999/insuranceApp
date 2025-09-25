@@ -3,8 +3,7 @@ import { Box } from "@mui/material";
 import { useNavigate, useParams, useMatch } from "react-router-dom";
 import apiService from "@services/apiService.js";
 
-const ClaimList = React.lazy(() => import("@components/ClaimList.tsx"));
-const ClaimDialog = React.lazy(() => import("@components/ClaimDialog.tsx"));
+const ClaimList = React.lazy(() => import("@components/Claim/ClaimList"));
 
 const ClaimListPage: React.FC = () => {
   const navigate = useNavigate();
@@ -67,16 +66,6 @@ const ClaimListPage: React.FC = () => {
         onEdit={handleEditClaim}
         onDelete={handleDeleteClaim}
       />
-
-      {dialogOpen && activeId && (
-        <ClaimDialog
-          open
-          mode={dialogMode}
-          claimId={activeId}
-          onClose={handleDialogClose}
-          onSaved={handleDialogSaved}
-        />
-      )}
     </Box>
   );
 };

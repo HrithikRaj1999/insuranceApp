@@ -1,4 +1,4 @@
-import { Claim } from "@/types/Claim.type.js";
+import { Claim, ClaimFormData } from "@typings";
 import axios, { AxiosInstance } from "axios";
 
 class ApiService {
@@ -6,7 +6,7 @@ class ApiService {
 
   constructor() {
     this.api = axios.create({
-      baseURL: import.meta.env.VITE_API_URL || "http://localhost:5000",
+      baseURL: import.meta.env.VITE_API_URL || "http://localhost:8080",
       timeout: 30000,
     });
 
@@ -29,14 +29,29 @@ class ApiService {
       }
     );
   }
+  async updateClaim(id: string, data: Partial<ClaimFormData>, files: File[]) {
+    const fd = new FormData();
+    if (data.name) fd.append("name", data.name);
+    if (data.policyId) fd.append("policyId", data.policyId);
+    if (data.description) fd.append("description", data.description);
+    files.slice(0, 10).forEach((f) => fd.append("files", f, f.name));
 
-  async submitClaim(formData: FormData): Promise<Claim> {
-    const response = await this.api.post("/api/claims", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    return response.data;
+    const res = await fetch(`/api/claims/${id}`, { method: "PUT", body: fd });
+    if (!res.ok) throw new Error("Failed to update");
+    return res.json();
   }
+  async submitClaim(data: ClaimFormData, files: File[]) {
+    const fd = new FormData();
+    fd.append("name", data.name);
+    fd.append("policyId", data.policyId);
+    fd.append("description", data.description);
 
+    files.slice(0, 10).forEach((f) => fd.append("files", f, f.name));
+
+    const res = await fetch("/api/claims", { method: "POST", body: fd });
+    if (!res.ok) throw new Error("Failed to submit");
+    return res.json();
+  }
   async getClaims(): Promise<Claim[]> {
     const response = await this.api.get("/api/claims");
     return response.data;
@@ -47,17 +62,9 @@ class ApiService {
     return response.data;
   }
 
-  async updateClaim(id: string, data: Partial<Claim>): Promise<Claim> {
-    const response = await this.api.put(`/api/claims/${id}`, data);
-    return response.data;
-  }
-
   async deleteClaim(id: string): Promise<void> {
     await this.api.delete(`/api/claims/${id}`);
   }
-
-
-
 
   async policyExists(policyNumber: string): Promise<boolean> {
     if (!policyNumber) return false;

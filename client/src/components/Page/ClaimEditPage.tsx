@@ -2,9 +2,9 @@ import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiService from "@services/apiService.js";
 import type { ClaimFormData } from "@/types/Claim.type.js";
-import Loader from "@/utils/Loader";
+import Loader from "@components/UI/Loader";
 
-const ClaimForm = React.lazy(() => import("@components/ClaimForm"));
+const ClaimForm = React.lazy(() => import("@components/Claim/ClaimForm"));
 
 const ClaimEditPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,15 +28,14 @@ const ClaimEditPage: React.FC = () => {
     };
   }, [id]);
 
-  const handleUpdate = async (data: ClaimFormData, file: File | null) => {
+  const handleUpdate = async (data: ClaimFormData, files: File[]) => {
+    if (!id) {
+      console.error("Missing claim id in route.");
+      return;
+    }
     setSaving(true);
     try {
-      const form = new FormData();
-      form.append("name", data.name);
-      form.append("policyId", data.policyId);
-      form.append("description", data.description);
-      if (file) form.append("file", file);
-      await apiService.updateClaim(id!, form);
+      await apiService.updateClaim(id, data, files);
       navigate("/claims");
     } finally {
       setSaving(false);

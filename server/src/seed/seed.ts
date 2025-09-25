@@ -39,7 +39,7 @@ async function seedPolicies() {
         )}`,
         holderName: faker.person.fullName(),
         type,
-        premiumAmount: faker.number.int({ min: 5000, max: 50000 }),
+        premiumAmount: faker.number.int({ min: 8080, max: 50000 }),
         startDate,
         endDate,
         status: faker.helpers.arrayElement(["active", "expired", "pending"]),

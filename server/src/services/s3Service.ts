@@ -13,7 +13,7 @@ import path from 'path';
 const region   = process.env.AWS_REGION || 'us-east-1';
 const bucket   = process.env.S3_BUCKET_NAME || ''; // may be empty
 const keyPrefix = (process.env.AWS_S3_PREFIX || 'claims').replace(/^\/+|\/+$/g, ''); // 'claims'
-const isDev    = process.env.NODE_ENV === 'development';
+const isDev    = ()=>process.env.NODE_ENV === 'development';
 const defaultACL = process.env.S3_OBJECT_ACL || 'public-read'; // or 'private'
 
 
@@ -48,7 +48,7 @@ function canUseS3(): { ok: true } | { ok: false; reason: string } {
 function finalizeLocalFile(tempPath: string): { localPath?: string } {
   let localPath: string | undefined;
   try {
-    if (isDev) {
+    if (isDev()) {
       const localDir = path.join(process.cwd(), 'uploads');
       if (!fs.existsSync(localDir)) fs.mkdirSync(localDir, { recursive: true });
       const newPath = path.join(localDir, path.basename(tempPath));

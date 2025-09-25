@@ -1,9 +1,9 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiService from "@services/apiService.js";
-import Loader from "@/utils/Loader";
+import Loader from "@components/UI/Loader";
 
-const ClaimForm = React.lazy(() => import("@components/ClaimForm"));
+const ClaimForm = React.lazy(() => import("@components/Claim/ClaimForm"));
 
 const ClaimViewPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();

@@ -1,0 +1,42 @@
+::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+:root {
+  --font-inter: 'Inter', 'Inter Fallback', sans-serif;
+}
+
+html,
+body,
+#root,
+.app {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: black;
+  font-family: var(--font-inter);
+  font-size: 1rem;
+}
+
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+  -webkit-text-fill-color: #fff !important;
+  transition: background-color 9999s ease-in-out 0s !important;
+  caret-color: #fff;
+}
+/* Ensure arrows are visible over dark backgrounds */
+.slick-prev,
+.slick-next {
+  z-index: 10;
+}
+
+.slick-prev:before,
+.slick-next:before {
+  font-size: 28px;
+  color: white; /* Adjust for visibility */
+}

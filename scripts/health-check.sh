@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Health check endpoint
-HEALTH_URL="http://localhost:5000/api/health"
+HEALTH_URL="http://localhost:8080/api/health"
 MAX_ATTEMPTS=30
 ATTEMPT=0
 
