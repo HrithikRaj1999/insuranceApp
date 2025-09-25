@@ -1,17 +1,15 @@
 terraform {
   required_version = ">= 1.0"
-  
+
   required_providers {
     aws = {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
-  }
-
-  backend "s3" {
-    bucket = "insurance-terraform-state"
-    key    = "prod/terraform.tfstate"
-    region = "us-east-1"
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.6"
+    }
   }
 }
 
@@ -19,39 +17,54 @@ provider "aws" {
   region = var.aws_region
 }
 
-# VPC
+# Discover an available AZ dynamically
+data "aws_availability_zones" "available" {
+  state = "available"
+}
+
+# Latest Ubuntu 22.04 LTS (Canonical)
+data "aws_ami" "ubuntu" {
+  most_recent = true
+  owners      = ["099720109477"]
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+}
+
+# ---------------- Network (public VPC) ----------------
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   enable_dns_hostnames = true
   enable_dns_support   = true
-
   tags = {
     Name = "${var.project_name}-vpc"
   }
 }
 
-# Internet Gateway
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
-
   tags = {
     Name = "${var.project_name}-igw"
   }
 }
 
-# Public Subnet
 resource "aws_subnet" "public" {
   vpc_id                  = aws_vpc.main.id
   cidr_block              = "10.0.1.0/24"
-  availability_zone       = "${var.aws_region}a"
+  availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
-
   tags = {
     Name = "${var.project_name}-public-subnet"
   }
 }
 
-# Route Table
 resource "aws_route_table" "public" {
   vpc_id = aws_vpc.main.id
 
@@ -65,18 +78,18 @@ resource "aws_route_table" "public" {
   }
 }
 
-# Route Table Association
 resource "aws_route_table_association" "public" {
   subnet_id      = aws_subnet.public.id
   route_table_id = aws_route_table.public.id
 }
 
-# Security Group
+# ---------------- Security Group ----------------
 resource "aws_security_group" "app" {
   name        = "${var.project_name}-sg"
-  description = "Security group for insurance app"
+  description = "Security group for ${var.project_name}"
   vpc_id      = aws_vpc.main.id
 
+  # SSH (consider restricting to your IP)
   ingress {
     from_port   = 22
     to_port     = 22
@@ -84,6 +97,7 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # HTTP
   ingress {
     from_port   = 80
     to_port     = 80
@@ -91,6 +105,7 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
+  # HTTPS
   ingress {
     from_port   = 443
     to_port     = 443
@@ -98,20 +113,7 @@ resource "aws_security_group" "app" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  ingress {
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  ingress {
-    from_port   = 8080
-    to_port     = 8080
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
+  # Egress anywhere
   egress {
     from_port   = 0
     to_port     = 0
@@ -124,51 +126,19 @@ resource "aws_security_group" "app" {
   }
 }
 
-# EC2 Instance
-resource "aws_instance" "app_server" {
-  ami           = data.aws_ami.ubuntu.id
-  instance_type = var.instance_type
-  key_name      = var.key_pair_name
-  
-  subnet_id                   = aws_subnet.public.id
-  vpc_security_group_ids      = [aws_security_group.app.id]
-  associate_public_ip_address = true
+# ---------------- S3 Bucket (PRIVATE) ----------------
 
-  root_block_device {
-    volume_size = 20
-    volume_type = "gp3"
-  }
-
-  user_data = base64encode(templatefile("${path.module}/user_data.sh", {
-    project_name = var.project_name
-    github_repo  = var.github_repo
-  }))
-
-  tags = {
-    Name = "${var.project_name}-server"
+# Regenerate the suffix when region/project changes to avoid cross-region collisions
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+  keepers = {
+    region  = var.aws_region
+    project = lower(var.project_name)
   }
 }
 
-# Get latest Ubuntu AMI
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"] # Canonical
-
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}
-
-# S3 Bucket for file uploads
 resource "aws_s3_bucket" "uploads" {
-  bucket = "${var.project_name}-uploads-${random_id.bucket_suffix.hex}"
-
+  bucket = "${lower(var.project_name)}-${var.aws_region}-uploads-${random_id.bucket_suffix.hex}"
   tags = {
     Name = "${var.project_name}-uploads"
   }
@@ -176,7 +146,7 @@ resource "aws_s3_bucket" "uploads" {
 
 resource "aws_s3_bucket_versioning" "uploads" {
   bucket = aws_s3_bucket.uploads.id
-  
+
   versioning_configuration {
     status = "Enabled"
   }
@@ -204,63 +174,38 @@ resource "aws_s3_bucket_cors_configuration" "uploads" {
   }
 }
 
-resource "random_id" "bucket_suffix" {
-  byte_length = 4
+# Private bucket: block all public access
+resource "aws_s3_bucket_public_access_block" "uploads" {
+  bucket                  = aws_s3_bucket.uploads.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
 }
 
-# ECR Repositories
-resource "aws_ecr_repository" "frontend" {
-  name                 = "${var.project_name}-frontend"
-  image_tag_mutability = "MUTABLE"
+# ---------------- EC2 Instance ----------------
+resource "aws_instance" "app_server" {
+  ami                         = data.aws_ami.ubuntu.id
+  instance_type               = var.instance_type
+  key_name                    = var.key_pair_name
+  subnet_id                   = aws_subnet.public.id
+  vpc_security_group_ids      = [aws_security_group.app.id]
+  associate_public_ip_address = true
 
-  image_scanning_configuration {
-    scan_on_push = true
+  root_block_device {
+    volume_size = 20
+    volume_type = "gp3"
   }
-}
 
-resource "aws_ecr_repository" "backend" {
-  name                 = "${var.project_name}-backend"
-  image_tag_mutability = "MUTABLE"
-
-  image_scanning_configuration {
-    scan_on_push = true
-  }
-}
-
-# ECS Cluster (Optional - for ECS deployment)
-resource "aws_ecs_cluster" "main" {
-  name = "${var.project_name}-cluster"
-
-  setting {
-    name  = "containerInsights"
-    value = "enabled"
-  }
-}
-
-# IAM Role for EC2
-resource "aws_iam_role" "ec2_role" {
-  name = "${var.project_name}-ec2-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ec2.amazonaws.com"
-        }
-      }
-    ]
+  user_data = templatefile("${path.module}/user_data.sh", {
+    project_name   = var.project_name
+    aws_region     = var.aws_region
+    s3_bucket_name = aws_s3_bucket.uploads.bucket
+    github_repo    = var.github_repo
   })
+
+  tags = {
+    Name = "${var.project_name}-server"
+  }
 }
 
-resource "aws_iam_role_policy_attachment" "ec2_s3" {
-  role       = aws_iam_role.ec2_role.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
-}
-
-resource "aws_iam_instance_profile" "ec2_profile" {
-  name = "${var.project_name}-ec2-profile"
-  role = aws_iam_role.ec2_role.name
-}
