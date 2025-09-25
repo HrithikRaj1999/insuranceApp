@@ -4,6 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "clean:js-win": "del-cli \"src/**/*.js\" \"src/**/*.js.map\" \"*.js\" \"*.js.map\"",
+    "clean": "del-cli dist build out .next .cache coverage *.tsbuildinfo",
+    "clean:all": "del-cli dist build out .next .cache coverage *.tsbuildinfo node_modules",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
@@ -27,6 +30,7 @@
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.3",
+    "del-cli": "^7.0.0",
     "eslint": "^9.36.0",
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
