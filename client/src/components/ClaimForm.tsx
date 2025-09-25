@@ -44,7 +44,6 @@ interface ClaimFormProps {
 const MIN_POLICY_LENGTH = 6;
 const DEBOUNCE_MS = 400;
 
-
 const fadeInUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -65,9 +64,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const navigate = useNavigate();
-
   const grad = `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`;
-
   const [formData, setFormData] = useState<ClaimFormData>(() => ({
     name: initial?.name ?? "",
     policyId: initial?.policy?.policyNumber ?? "",
@@ -79,7 +76,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   const [policyValid, setPolicyValid] = useState<boolean | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const readOnly = mode === "view";
-
+  const HideHeaderForm = mode === "view" || mode === "edit";
   const checkPolicyExists = useCallback(async (id: string) => {
     if (!id || id.length < MIN_POLICY_LENGTH) return;
     setPolicyChecking(true);
@@ -176,7 +173,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           animation: `${fadeInUp} 0.6s ease-out`,
         }}
       >
-        {/* Progress bar for loading state */}
         {loading && (
           <LinearProgress
             sx={{
@@ -193,33 +189,45 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           />
         )}
 
-        {/* Header */}
-        <Box sx={{ mb: 4, textAlign: "center" }}>
-          <Typography
-            variant="h3"
-            component="h1"
-            gutterBottom
-            sx={{
-              fontWeight: 700,
-              background: grad,
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Submit Your Claim
-          </Typography>
-          <Typography variant="body1" color="text.secondary">
-            Fill in the details below to process your reimbursement
-          </Typography>
-        </Box>
+        <>
+          {" "}
+          <Box sx={{ mb: 4, textAlign: "center" }}>
+            <Typography
+              variant="h3"
+              component="h1"
+              gutterBottom
+              sx={{
+                fontWeight: 700,
+                background: grad,
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              {mode === "edit"
+                ? "Edit "
+                : mode === "view"
+                ? "View "
+                : "Submit "}{" "}
+              Your Claim
+            </Typography>
+            {!HideHeaderForm && (
+              <Typography variant="body1" color="text.secondary">
+                Fill in the details below to process your reimbursement
+              </Typography>
+            )}
+          </Box>
+          <Divider sx={{ mb: 4 }}>
+            <Chip label="Claim Details" size="small" />
+          </Divider>
+        </>
 
-        <Divider sx={{ mb: 4 }}>
-          <Chip label="Claim Details" size="small" />
-        </Divider>
-
-        <Box component="form" id="claim-form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-          {/* Name */}
+        <Box
+          component="form"
+          id="claim-form"
+          onSubmit={handleSubmit}
+          sx={{ mt: 3 }}
+        >
           <TextField
             fullWidth
             label="Full Name"
@@ -241,12 +249,13 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             sx={{
               "& .MuiOutlinedInput-root": {
                 "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
               },
             }}
           />
 
-          {/* Policy */}
           <TextField
             fullWidth
             label="Policy ID"
@@ -275,7 +284,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               endAdornment: policyValid !== null && (
                 <InputAdornment position="end">
                   <Fade in>
-                    {policyValid ? <CheckCircleIcon color="success" /> : <ErrorIcon color="error" />}
+                    {policyValid ? (
+                      <CheckCircleIcon color="success" />
+                    ) : (
+                      <ErrorIcon color="error" />
+                    )}
                   </Fade>
                 </InputAdornment>
               ),
@@ -283,15 +296,17 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             sx={{
               "& .MuiOutlinedInput-root": {
                 "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
               },
               "& .MuiFormHelperText-root": {
-                color: policyValid === true ? theme.palette.success.main : undefined,
+                color:
+                  policyValid === true ? theme.palette.success.main : undefined,
               },
             }}
           />
 
-          {/* Description */}
           <TextField
             fullWidth
             multiline
@@ -302,14 +317,21 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             onChange={handleInputChange("description")}
             error={!!errors.description}
             helperText={
-              errors.description || `${Math.max(0, formData.description.length)}/20 characters minimum`
+              errors.description ||
+              `${Math.max(
+                0,
+                formData.description.length
+              )}/20 characters minimum`
             }
             margin="normal"
             required
             disabled={loading || readOnly}
             InputProps={{
               startAdornment: (
-                <InputAdornment position="start" sx={{ alignSelf: "flex-start", mt: 1 }}>
+                <InputAdornment
+                  position="start"
+                  sx={{ alignSelf: "flex-start", mt: 1 }}
+                >
                   <DescriptionIcon color="action" />
                 </InputAdornment>
               ),
@@ -317,12 +339,13 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             sx={{
               "& .MuiOutlinedInput-root": {
                 "&:hover fieldset": { borderColor: theme.palette.primary.main },
-                "&.Mui-focused fieldset": { borderColor: theme.palette.primary.main },
+                "&.Mui-focused fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
               },
             }}
           />
 
-          {/* File Upload */}
           <Box sx={{ mt: 3, mb: 3 }}>
             <Paper
               variant="outlined"
@@ -335,11 +358,16 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                 transition: "all 0.3s ease",
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.background.default, isDark ? 0.9 : 0.7),
+                  bgcolor: alpha(
+                    theme.palette.background.default,
+                    isDark ? 0.9 : 0.7
+                  ),
                 },
               }}
             >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}>
+              <Box
+                sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
+              >
                 <UploadIcon color="action" />
                 <Typography variant="subtitle1" fontWeight={600}>
                   Upload Supporting Documents
@@ -354,7 +382,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             </Paper>
           </Box>
 
-          {/* Alerts */}
           {errors.submit && (
             <Zoom in>
               <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
@@ -371,7 +398,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             </Zoom>
           )}
 
-          {/* Submit */}
           {!readOnly && (
             <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
               <Button
@@ -385,15 +411,23 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                   py: 1.5,
                   borderRadius: 2,
                   background: loading ? undefined : grad,
-                  boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  boxShadow: `0 4px 15px ${alpha(
+                    theme.palette.primary.main,
+                    0.3
+                  )}`,
                   textTransform: "none",
                   fontSize: "1.1rem",
                   fontWeight: 600,
                   transition: "all 0.3s ease",
                   animation: !loading ? `${pulse} 2s infinite` : "none",
                   "&:hover": {
-                    background: loading ? undefined : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 100%)`,
-                    boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+                    background: loading
+                      ? undefined
+                      : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 100%)`,
+                    boxShadow: `0 6px 20px ${alpha(
+                      theme.palette.primary.main,
+                      0.4
+                    )}`,
                     transform: "translateY(-2px)",
                   },
                   "&:active": { transform: "translateY(0)" },
@@ -405,19 +439,20 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           )}
         </Box>
 
-        {/* AI Summary */}
         {summary && (
           <Fade in>
             <Box sx={{ mt: 4 }}>
               <Divider sx={{ mb: 3 }}>
                 <Chip label="AI Summary" size="small" color="primary" />
               </Divider>
-              <ClaimSummary defaultValue={initial?.summary ?? ""} summary={summary} />
+              <ClaimSummary
+                defaultValue={initial?.summary ?? ""}
+                summary={summary}
+              />
             </Box>
           </Fade>
         )}
 
-        {/* Decorative circles (subtle, theme-aware) */}
         <Box
           sx={{
             position: "absolute",

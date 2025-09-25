@@ -28,12 +28,11 @@ const ClaimSummary: React.FC<ClaimSummaryProps> = ({
           </Typography>
         </Box>
 
-        {/* Scrollable area */}
         <Box
           sx={{
             maxHeight: 200, 
             overflowY: "auto", 
-            pr: 1, // add a bit of padding so scrollbar doesn’t cover text
+            pr: 1,
           }}
         >
           <Typography variant="body1" sx={{ whiteSpace: "pre-wrap" }}>

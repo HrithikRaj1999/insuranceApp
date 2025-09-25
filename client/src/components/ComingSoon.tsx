@@ -104,14 +104,14 @@ export const RocketAnimation: React.FC = () => (
     }}
   >
     <svg width="120" height="150" viewBox="0 0 120 150">
-      {/* Main Rocket Group with float animation */}
+      
       <g
         style={{
           animation: `${float} 3s ease-in-out infinite`,
           transformOrigin: "center",
         }}
       >
-        {/* Rocket Body */}
+        
         <path
           d="M60 10 L75 50 L70 70 L50 70 L45 50 Z"
           fill="url(#rocketBodyGradient)"
@@ -119,21 +119,21 @@ export const RocketAnimation: React.FC = () => (
           strokeWidth="1"
         />
 
-        {/* Rocket Tip */}
+        
         <path d="M60 10 L65 25 L55 25 Z" fill="#ff6b6b" />
 
-        {/* Left Wing */}
+        
         <path d="M45 45 L30 65 L40 65 L45 55 Z" fill="#667eea" opacity="0.9" />
 
-        {/* Right Wing */}
+        
         <path d="M75 45 L90 65 L80 65 L75 55 Z" fill="#667eea" opacity="0.9" />
 
-        {/* Rocket Window */}
+        
         <circle cx="60" cy="35" r="8" fill="#1a202c" opacity="0.3" />
         <circle cx="60" cy="35" r="6" fill="#63b3ed" />
         <circle cx="62" cy="33" r="2" fill="#bee3f8" opacity="0.8" />
 
-        {/* Details */}
+        
         <rect
           x="55"
           y="50"
@@ -154,24 +154,24 @@ export const RocketAnimation: React.FC = () => (
         />
       </g>
 
-      {/* Animated Fire Group */}
+      
       <g
         style={{
           animation: `${flicker} 0.2s ease-in-out infinite alternate`,
           transformOrigin: "center top",
         }}
       >
-        {/* Outer Fire */}
+        
         <path d="M50 70 L60 95 L70 70 Z" fill="#ff6b6b" opacity="0.9" />
 
-        {/* Middle Fire */}
+        
         <path d="M53 70 L60 88 L67 70 Z" fill="#ffd93d" opacity="0.9" />
 
-        {/* Inner Fire */}
+        
         <path d="M56 70 L60 80 L64 70 Z" fill="#fff" opacity="0.8" />
       </g>
 
-      {/* Animated Smoke Particles */}
+      
       <g opacity="0.4">
         <circle
           cx="55"
@@ -210,7 +210,7 @@ export const RocketAnimation: React.FC = () => (
         />
       </g>
 
-      {/* Stars in background */}
+      
       <g style={{ animation: `${twinkle} 2s ease-in-out infinite` }}>
         <circle cx="20" cy="30" r="1" fill="#ffd93d" />
         <circle cx="100" cy="40" r="1" fill="#ffd93d" />
@@ -220,7 +220,7 @@ export const RocketAnimation: React.FC = () => (
         <circle cx="85" cy="55" r="1" fill="#ffd93d" />
       </g>
 
-      {/* Gradient Definitions */}
+      
       <defs>
         <linearGradient
           id="rocketBodyGradient"

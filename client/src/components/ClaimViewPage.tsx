@@ -1,6 +1,7 @@
 import React from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import apiService from "@services/apiService.js";
+import Loader from "@/utils/Loader";
 
 const ClaimForm = React.lazy(() => import("@components/ClaimForm"));
 
@@ -20,16 +21,18 @@ const ClaimViewPage: React.FC = () => {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [id]);
 
-  if (loading) return <div style={{ padding: 24 }}>Loading…</div>;
+  if (loading) return <Loader />;
   if (!initial) return <div style={{ padding: 24 }}>Claim not found.</div>;
 
   return (
     <React.Suspense fallback={<div style={{ padding: 24 }}>Loading form…</div>}>
       <ClaimForm
-        onSubmit={() => Promise.resolve()}  // no-op in view mode
+        onSubmit={() => Promise.resolve()} // no-op in view mode
         summary={initial.summary ?? ""}
         loading={false}
         initial={initial}

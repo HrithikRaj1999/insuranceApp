@@ -270,19 +270,19 @@ export const WaveBackground: React.FC = () => (
   <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', p: 4 }}>
     <svg width="100" height="150" viewBox="0 0 100 150">
       <g style={{ animation: `${float} 2s ease-in-out infinite` }}>
-        {/* Rocket Body */}
+        
         <path
           d="M50 20 L60 60 L40 60 Z"
           fill="url(#rocketGradient)"
         />
-        {/* Rocket Wings */}
+        
         <path d="M40 50 L30 65 L40 60 Z" fill="#667eea" />
         <path d="M60 50 L70 65 L60 60 Z" fill="#667eea" />
-        {/* Rocket Window */}
+        
         <circle cx="50" cy="40" r="5" fill="#87ceeb" />
       </g>
       
-      {/* Animated Fire */}
+      
       <g style={{ animation: `${pulse} 0.3s ease-in-out infinite` }}>
         <path
           d="M45 60 L50 80 L55 60 Z"
@@ -295,7 +295,7 @@ export const WaveBackground: React.FC = () => (
         />
       </g>
       
-      {/* Smoke Particles */}
+      
       <circle cx="45" cy="85" r="3" fill="#999" opacity="0.5"
         style={{ animation: 'smokeUp 2s ease-out infinite' }} />
       <circle cx="55" cy="90" r="2" fill="#999" opacity="0.5"

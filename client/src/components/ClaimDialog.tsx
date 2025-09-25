@@ -90,7 +90,7 @@ const ClaimDialog: React.FC<Props> = ({
               summary={claim.summary ?? ""}
             />
 
-            {/* Optional: show existing attachment */}
+            
             {claim.fileUrl && (
               <Stack mt={2}>
                 <Link href={claim.fileUrl} target="_blank" rel="noopener">

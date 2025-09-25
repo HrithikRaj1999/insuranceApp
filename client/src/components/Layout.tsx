@@ -69,7 +69,7 @@ const Layout: React.FC = () => {
 
   const drawerContent = (
     <>
-      {/* Drawer Header */}
+      
       <Box
         sx={{
           p: 2,
@@ -149,7 +149,7 @@ const Layout: React.FC = () => {
         color: theme.palette.text.primary,
       }}
     >
-      {/* Mobile App Bar */}
+      
       {isMobile && (
         <AppBar
           position="fixed"
@@ -163,7 +163,7 @@ const Layout: React.FC = () => {
               Happy Claim
             </Typography>
 
-            {/* quick theme toggle */}
+            
             <Tooltip
               title={`Switch to ${mode === "light" ? "dark" : "light"} mode`}
             >
@@ -175,7 +175,7 @@ const Layout: React.FC = () => {
         </AppBar>
       )}
 
-      {/* Navigation Drawer */}
+      
       <Drawer
         variant={isDesktop ? "permanent" : "temporary"}
         open={drawerOpen}
@@ -193,7 +193,7 @@ const Layout: React.FC = () => {
         {drawerContent}
       </Drawer>
 
-      {/* Main Content */}
+      
       <Box
         component="main"
         sx={{
@@ -204,7 +204,7 @@ const Layout: React.FC = () => {
           flexDirection: "column",
         }}
       >
-        {/* Desktop Top Bar */}
+        
         {isDesktop && (
           <AppBar position="sticky">
             <Toolbar sx={{ backgroundColor: headerBg }}>

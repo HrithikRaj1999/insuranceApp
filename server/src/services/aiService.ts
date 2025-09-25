@@ -27,7 +27,7 @@ function warn(label: string, msg: string, extra?: Record<string, unknown>) {
 function mockSummary(description: string, reason: string): string {
   warn('mock', `Using mock summary: ${reason}`);
   const truncated = (description ?? '').substring(0, 150);
-  return `[Mock Summary] ${truncated}${(description ?? '').length > 150 ? '...' : ''}`;
+  return `[Mock Summary] ${truncated}${(description ?? '')}`;
 }
 
 function normalizeCategory(s?: string | null): string {
