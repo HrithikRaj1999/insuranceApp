@@ -31,12 +31,16 @@ import {
   Upload as UploadIcon,
   Send as SendIcon,
   Delete as DeleteIcon,
+  PictureAsPdf as PdfIcon,
+  Download as DownloadIcon,
+  Visibility as ViewIcon,
 } from "@mui/icons-material";
 import { keyframes, alpha } from "@mui/system";
 import { validateClaimForm } from "@/utils/validators.js";
 import ClaimSummary from "./ClaimSummary.js";
 import apiService from "@services/apiService.js";
 import { Claim, ClaimFormData, FormErrors } from "@typings";
+
 interface ClaimFormProps {
   onSubmit: (data: ClaimFormData, files: File[]) => void;
   summary: string;
@@ -44,17 +48,21 @@ interface ClaimFormProps {
   initial?: Partial<Claim>;
   mode?: "view" | "edit" | "create";
 }
+
 const MIN_POLICY_LENGTH = 6;
 const DEBOUNCE_MS = 400;
+
 const fadeInUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 `;
+
 const pulse = keyframes`
   0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
   70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
   100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
 `;
+
 const ClaimForm: React.FC<ClaimFormProps> = ({
   onSubmit,
   initial,
@@ -66,6 +74,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   const isDark = theme.palette.mode === "dark";
   const navigate = useNavigate();
   const grad = `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`;
+
   const [formData, setFormData] = useState<ClaimFormData>(() => ({
     name: initial?.name ?? "",
     policyId: initial?.policy?.policyNumber ?? "",
@@ -76,8 +85,23 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   const [policyChecking, setPolicyChecking] = useState(false);
   const [policyValid, setPolicyValid] = useState<boolean | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+
   const readOnly = mode === "view";
   const HideHeaderForm = mode === "view" || mode === "edit";
+
+  // Helper function to extract filename from URL
+  const extractFileName = (url: string): string => {
+    try {
+      const urlPath = url.split("?")[0];
+      const pathParts = urlPath.split("/");
+      const fileNameWithPrefix = pathParts[pathParts.length - 1];
+      const fileName = fileNameWithPrefix.replace(/^\d+-/, "");
+      return decodeURIComponent(fileName);
+    } catch {
+      return "document.pdf";
+    }
+  };
+
   const checkPolicyExists = useCallback(async (id: string) => {
     if (!id || id.length < MIN_POLICY_LENGTH) return;
     setPolicyChecking(true);
@@ -100,10 +124,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       setPolicyChecking(false);
     }
   }, []);
+
   const debouncedCheck = useMemo(
     () => debounce((id: string) => checkPolicyExists(id), DEBOUNCE_MS),
     [checkPolicyExists]
   );
+
   const handleInputChange =
     (field: keyof ClaimFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -119,6 +145,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           [field]: "",
         }));
     };
+
   const pickFiles = (list: FileList | null) => {
     if (!list) return;
     const next: File[] = [];
@@ -137,9 +164,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       }));
     }
   };
+
   const removeFileAt = (idx: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const firstFile = files[0] ?? null;
@@ -183,6 +212,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       });
     }
   };
+
   return (
     <Container maxWidth="md">
       <Paper
@@ -236,7 +266,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                 WebkitTextFillColor: "transparent",
               }}
             >
-              {mode === "edit" ? "Edit " : mode === "view" ? "View " : "Submit "} Your Claim
+              {mode === "edit"
+                ? "Edit "
+                : mode === "view"
+                ? "View "
+                : "Submit "}{" "}
+              Your Claim
             </Typography>
             {!HideHeaderForm && (
               <Typography variant="body1" color="text.secondary">
@@ -303,8 +338,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               (policyChecking
                 ? "Checking policy..."
                 : policyValid === true
-                  ? "Policy verified ✓"
-                  : "Format: 6–12 alphanumeric characters")
+                ? "Policy verified ✓"
+                : "Format: 6–12 alphanumeric characters")
             }
             margin="normal"
             required
@@ -342,7 +377,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                 },
               },
               "& .MuiFormHelperText-root": {
-                color: policyValid === true ? theme.palette.success.main : undefined,
+                color:
+                  policyValid === true ? theme.palette.success.main : undefined,
               },
             }}
           />
@@ -358,7 +394,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             error={!!errors.description}
             helperText={
               errors.description ||
-              `${Math.max(0, formData.description.length)}/20 characters minimum`
+              `${Math.max(
+                0,
+                formData.description.length
+              )}/20 characters minimum`
             }
             margin="normal"
             required
@@ -399,13 +438,18 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               sx={{
                 p: 3,
                 borderStyle: "dashed",
-                borderColor: (errors as any).file ? theme.palette.error.main : "divider",
+                borderColor: (errors as any).file
+                  ? theme.palette.error.main
+                  : "divider",
                 borderRadius: 2,
                 bgcolor: theme.palette.background.default,
                 transition: "all 0.3s ease",
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  bgcolor: alpha(theme.palette.background.default, isDark ? 0.9 : 0.7),
+                  bgcolor: alpha(
+                    theme.palette.background.default,
+                    isDark ? 0.9 : 0.7
+                  ),
                 },
               }}
             >
@@ -419,34 +463,115 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               >
                 <UploadIcon color="action" />
                 <Typography variant="subtitle1" fontWeight={600}>
-                  Upload Supporting Documents (PDF, up to 10)
+                  {mode === "view" || mode === "edit"
+                    ? "Attached Documents"
+                    : "Upload Supporting Documents (PDF, up to 10)"}
                 </Typography>
               </Box>
 
-              <Stack
-                direction={{
-                  xs: "column",
-                  sm: "row",
-                }}
-                spacing={2}
-                alignItems="center"
-              >
-                <Button variant="outlined" component="label" disabled={loading || readOnly}>
-                  Choose PDFs
-                  <input
-                    type="file"
-                    hidden
-                    accept="application/pdf"
-                    multiple
-                    onChange={(e) => pickFiles(e.target.files)}
-                  />
-                </Button>
-                <Typography variant="body2" color="text.secondary">
-                  {files.length} selected
-                </Typography>
-              </Stack>
+              {/* Show upload button only in create mode */}
+              {mode === "create" && (
+                <Stack
+                  direction={{
+                    xs: "column",
+                    sm: "row",
+                  }}
+                  spacing={2}
+                  alignItems="center"
+                >
+                  <Button
+                    variant="outlined"
+                    component="label"
+                    disabled={loading || readOnly}
+                  >
+                    Choose PDFs
+                    <input
+                      type="file"
+                      hidden
+                      accept="application/pdf"
+                      multiple
+                      onChange={(e) => pickFiles(e.target.files)}
+                    />
+                  </Button>
+                  <Typography variant="body2" color="text.secondary">
+                    {files.length} selected
+                  </Typography>
+                </Stack>
+              )}
 
-              {files.length > 0 && (
+              {/* Show existing PDFs in view/edit mode */}
+              {(mode === "view" || mode === "edit") &&
+                initial?.fileUrls &&
+                initial.fileUrls.length > 0 && (
+                  <List
+                    dense
+                    sx={{
+                      mt: 2,
+                      bgcolor: alpha(theme.palette.background.paper, 0.4),
+                      borderRadius: 1,
+                    }}
+                  >
+                    {initial.fileUrls.map((url, idx) => {
+                      const fileName = extractFileName(url);
+                      return (
+                        <ListItem
+                          key={`existing-file-${idx}`}
+                          sx={{
+                            px: 1,
+                            py: 1.5,
+                            borderBottom:
+                              idx < initial.fileUrls.length - 1
+                                ? `1px solid ${theme.palette.divider}`
+                                : "none",
+                          }}
+                          secondaryAction={
+                            <Stack direction="row" spacing={1}>
+                              <IconButton
+                                edge="end"
+                                onClick={() => window.open(url, "_blank")}
+                                color="primary"
+                                title="View PDF"
+                              >
+                                <ViewIcon fontSize="small" />
+                              </IconButton>
+                              <IconButton
+                                edge="end"
+                                component="a"
+                                href={url}
+                                download={fileName}
+                                color="primary"
+                                title="Download PDF"
+                              >
+                                <DownloadIcon fontSize="small" />
+                              </IconButton>
+                            </Stack>
+                          }
+                        >
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: 1,
+                            }}
+                          >
+                            <PdfIcon color="error" />
+                            <ListItemText
+                              primary={fileName}
+                              secondary={`Document ${idx + 1}`}
+                              primaryTypographyProps={{
+                                noWrap: true,
+                                sx: { maxWidth: { xs: 200, sm: 400 } },
+                              }}
+                            />
+                          </Box>
+                        </ListItem>
+                      );
+                    })}
+                  </List>
+                )}
+
+              {/* Show newly selected files in create mode */}
+              {mode === "create" && files.length > 0 && (
                 <List
                   dense
                   sx={{
@@ -460,7 +585,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                       key={`${f.name}-${idx}`}
                       secondaryAction={
                         !readOnly && (
-                          <IconButton edge="end" onClick={() => removeFileAt(idx)}>
+                          <IconButton
+                            edge="end"
+                            onClick={() => removeFileAt(idx)}
+                          >
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         )
@@ -469,17 +597,34 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                         px: 1,
                       }}
                     >
-                      <ListItemText
-                        primary={f.name}
-                        secondary={`${(f.size / 1024 / 1024).toFixed(2)} MB`}
-                        primaryTypographyProps={{
-                          noWrap: true,
-                        }}
-                      />
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                      >
+                        <PdfIcon color="error" />
+                        <ListItemText
+                          primary={f.name}
+                          secondary={`${(f.size / 1024 / 1024).toFixed(2)} MB`}
+                          primaryTypographyProps={{
+                            noWrap: true,
+                          }}
+                        />
+                      </Box>
                     </ListItem>
                   ))}
                 </List>
               )}
+
+              {/* Show message if no documents in view/edit mode */}
+              {(mode === "view" || mode === "edit") &&
+                (!initial?.fileUrls || initial.fileUrls.length === 0) && (
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ mt: 2 }}
+                  >
+                    No documents attached to this claim.
+                  </Typography>
+                )}
             </Paper>
           </Box>
 
@@ -530,7 +675,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                   py: 1.5,
                   borderRadius: 2,
                   background: loading ? undefined : grad,
-                  boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.3)}`,
+                  boxShadow: `0 4px 15px ${alpha(
+                    theme.palette.primary.main,
+                    0.3
+                  )}`,
                   textTransform: "none",
                   fontSize: "1.1rem",
                   fontWeight: 600,
@@ -540,7 +688,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                     background: loading
                       ? undefined
                       : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 100%)`,
-                    boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
+                    boxShadow: `0 6px 20px ${alpha(
+                      theme.palette.primary.main,
+                      0.4
+                    )}`,
                     transform: "translateY(-2px)",
                   },
                   "&:active": {
@@ -568,7 +719,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               >
                 <Chip label="AI Summary" size="small" color="primary" />
               </Divider>
-              <ClaimSummary defaultValue={initial?.summary ?? ""} summary={summary} />
+              <ClaimSummary
+                defaultValue={initial?.summary ?? ""}
+                summary={summary}
+              />
             </Box>
           </Fade>
         )}
@@ -603,4 +757,5 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
     </Container>
   );
 };
+
 export default ClaimForm;

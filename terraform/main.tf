@@ -112,6 +112,14 @@ resource "aws_security_group" "app" {
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
   }
+  
+  #mongodb
+  ingress {
+    from_port   = 27017
+    to_port     = 27017
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
 
   # Egress anywhere
   egress {
@@ -183,6 +191,46 @@ resource "aws_s3_bucket_public_access_block" "uploads" {
   restrict_public_buckets = true
 }
 
+# ---------------- IAM Role for EC2 S3 Access ----------------
+
+# IAM Role for EC2 to access S3
+resource "aws_iam_role" "ec2_s3_role" {
+  name = "${var.project_name}-ec2-s3-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${var.project_name}-ec2-s3-role"
+  }
+}
+
+# Attach AWS managed S3 Full Access policy
+resource "aws_iam_role_policy_attachment" "s3_full_access" {
+  role       = aws_iam_role.ec2_s3_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+# Instance Profile
+resource "aws_iam_instance_profile" "ec2_profile" {
+  name = "${var.project_name}-ec2-profile"
+  role = aws_iam_role.ec2_s3_role.name
+
+  tags = {
+    Name = "${var.project_name}-ec2-profile"
+  }
+}
+
 # ---------------- EC2 Instance ----------------
 resource "aws_instance" "app_server" {
   ami                         = data.aws_ami.ubuntu.id
@@ -191,6 +239,9 @@ resource "aws_instance" "app_server" {
   subnet_id                   = aws_subnet.public.id
   vpc_security_group_ids      = [aws_security_group.app.id]
   associate_public_ip_address = true
+  
+  # Add IAM instance profile for S3 access
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
 
   root_block_device {
     volume_size = 20
@@ -207,5 +258,7 @@ resource "aws_instance" "app_server" {
   tags = {
     Name = "${var.project_name}-server"
   }
-}
 
+  # Ensure IAM resources are created first
+  depends_on = [aws_iam_instance_profile.ec2_profile]
+}

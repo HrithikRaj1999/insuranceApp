@@ -2,7 +2,7 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import policyModel from "../models/policy.model";
 dotenv.config();
-const MONGODB_URI = process.env.MONGODB_URI || "mongodb://localhost:27017/insurance-claims";
+const MONGODB_URI = "mongodb+srv://raj:sexOn1heBitch@cluster0.rqs2n3l.mongodb.net/insuranceApp";
 console.log({
   MONGODB_URI,
 });
