@@ -2,22 +2,19 @@ import React from "react";
 import { Box } from "@mui/material";
 import { useNavigate, useParams, useMatch } from "react-router-dom";
 import apiService from "@services/apiService.js";
-
 const ClaimList = React.lazy(() => import("@components/Claim/ClaimList"));
-
 const ClaimListPage: React.FC = () => {
   const navigate = useNavigate();
-  const params = useParams<{ id: string }>();
-
+  const params = useParams<{
+    id: string;
+  }>();
   const matchView = useMatch("/claims/:id");
   const matchEdit = useMatch("/claims/:id/edit");
   const dialogOpen = !!(matchView || matchEdit);
   const dialogMode: "view" | "edit" = matchEdit ? "edit" : "view";
   const activeId = params.id ?? null;
-
   const [claims, setClaims] = React.useState<any[]>([]);
   const [loading, setLoading] = React.useState(false);
-
   const loadClaims = React.useCallback(async () => {
     setLoading(true);
     try {
@@ -29,18 +26,14 @@ const ClaimListPage: React.FC = () => {
       setLoading(false);
     }
   }, []);
-
   React.useEffect(() => {
     loadClaims();
   }, [loadClaims]);
-
   const openDialog = (mode: "view" | "edit", id: string) => {
     navigate(mode === "edit" ? `/claims/${id}/edit` : `/claims/${id}`);
   };
-
   const handleViewClaim = (id: string) => openDialog("view", id);
   const handleEditClaim = (id: string) => openDialog("edit", id);
-
   const handleDeleteClaim = async (id: string) => {
     if (!window.confirm("Are you sure you want to delete this claim?")) return;
     try {
@@ -50,13 +43,11 @@ const ClaimListPage: React.FC = () => {
       console.error("Error deleting claim:", e);
     }
   };
-
   const handleDialogClose = () => navigate("/claims");
   const handleDialogSaved = async () => {
     await loadClaims();
     navigate("/claims");
   };
-
   return (
     <Box>
       <ClaimList
@@ -69,5 +60,4 @@ const ClaimListPage: React.FC = () => {
     </Box>
   );
 };
-
 export default ClaimListPage;

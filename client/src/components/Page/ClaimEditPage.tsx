@@ -3,16 +3,15 @@ import { useNavigate, useParams } from "react-router-dom";
 import apiService from "@services/apiService.js";
 import type { ClaimFormData } from "@/types";
 import Loader from "@components/UI/Loader";
-
 const ClaimForm = React.lazy(() => import("@components/Claim/ClaimForm"));
-
 const ClaimEditPage: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{
+    id: string;
+  }>();
   const navigate = useNavigate();
   const [initial, setInitial] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
   const [saving, setSaving] = React.useState(false);
-
   React.useEffect(() => {
     let alive = true;
     (async () => {
@@ -27,7 +26,6 @@ const ClaimEditPage: React.FC = () => {
       alive = false;
     };
   }, [id]);
-
   const handleUpdate = async (data: ClaimFormData, files: File[]) => {
     if (!id) {
       console.error("Missing claim id in route.");
@@ -41,10 +39,17 @@ const ClaimEditPage: React.FC = () => {
       setSaving(false);
     }
   };
-
   if (loading) return <Loader />;
-  if (!initial) return <div style={{ padding: 24 }}>Claim not found.</div>;
-
+  if (!initial)
+    return (
+      <div
+        style={{
+          padding: 24,
+        }}
+      >
+        Claim not found.
+      </div>
+    );
   return (
     <ClaimForm
       onSubmit={handleUpdate}
@@ -55,5 +60,4 @@ const ClaimEditPage: React.FC = () => {
     />
   );
 };
-
 export default ClaimEditPage;

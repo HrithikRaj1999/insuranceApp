@@ -1,7 +1,6 @@
 import React from "react";
 import { IconButton, Tooltip, Stack } from "@mui/material";
 import { Delete, Edit, Visibility } from "@mui/icons-material";
-
 interface Props {
   id: string;
   onView: (id: string) => void;
@@ -10,7 +9,6 @@ interface Props {
   disableEdit?: boolean;
   disableDelete?: boolean;
 }
-
 const ClaimActions: React.FC<Props> = ({
   id,
   onView,
@@ -29,11 +27,7 @@ const ClaimActions: React.FC<Props> = ({
 
       <Tooltip title="Edit">
         <span>
-          <IconButton
-            size="small"
-            onClick={() => onEdit(id)}
-            disabled={disableEdit}
-          >
+          <IconButton size="small" onClick={() => onEdit(id)} disabled={disableEdit}>
             <Edit fontSize="small" />
           </IconButton>
         </span>
@@ -54,5 +48,4 @@ const ClaimActions: React.FC<Props> = ({
     </Stack>
   );
 };
-
 export default ClaimActions;

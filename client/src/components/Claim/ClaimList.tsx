@@ -14,7 +14,6 @@ import {
 import { formatDate } from "@/utils/validators.js";
 import { Delete, Edit, Visibility } from "@mui/icons-material";
 import { Claim } from "@/types";
-
 interface ClaimListProps {
   claims: Claim[];
   onView: (id: string) => void;
@@ -22,23 +21,21 @@ interface ClaimListProps {
   loading: Boolean;
   onDelete: (id: string) => void;
 }
-
-const ClaimList: React.FC<ClaimListProps> = ({
-  claims,
-  onView,
-  onEdit,
-  onDelete,
-}) => {
+const ClaimList: React.FC<ClaimListProps> = ({ claims, onView, onEdit, onDelete }) => {
   if (claims.length === 0) {
     return (
-      <Paper sx={{ p: 3, textAlign: "center" }}>
+      <Paper
+        sx={{
+          p: 3,
+          textAlign: "center",
+        }}
+      >
         <Typography variant="body1" color="text.secondary">
           No claims found. Submit your first claim to get started.
         </Typography>
       </Paper>
     );
   }
-
   return (
     <TableContainer component={Paper}>
       <Table>
@@ -64,29 +61,15 @@ const ClaimList: React.FC<ClaimListProps> = ({
               <TableCell>
                 <Chip label="Submitted" color="primary" size="small" />
               </TableCell>
-              <TableCell>
-                {claim.createdAt ? formatDate(claim.createdAt) : "-"}
-              </TableCell>
+              <TableCell>{claim.createdAt ? formatDate(claim.createdAt) : "-"}</TableCell>
               <TableCell align="center">
-                <IconButton
-                  onClick={() => onView(claim._id!)}
-                  size="small"
-                  color="primary"
-                >
+                <IconButton onClick={() => onView(claim._id!)} size="small" color="primary">
                   <Visibility />
                 </IconButton>
-                <IconButton
-                  onClick={() => onEdit(claim._id!)}
-                  size="small"
-                  color="default"
-                >
+                <IconButton onClick={() => onEdit(claim._id!)} size="small" color="default">
                   <Edit />
                 </IconButton>
-                <IconButton
-                  onClick={() => onDelete(claim._id!)}
-                  size="small"
-                  color="error"
-                >
+                <IconButton onClick={() => onDelete(claim._id!)} size="small" color="error">
                   <Delete />
                 </IconButton>
               </TableCell>
@@ -97,5 +80,4 @@ const ClaimList: React.FC<ClaimListProps> = ({
     </TableContainer>
   );
 };
-
 export default ClaimList;

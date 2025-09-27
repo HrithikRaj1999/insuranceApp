@@ -1,13 +1,11 @@
 import React from "react";
 import { Box, Typography, useTheme } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-
 type LoaderProps = {
   label?: string;
   fullScreen?: boolean;
   size?: number;
 };
-
 const Loader: React.FC<LoaderProps> = ({ label = "Loading…", fullScreen = true, size = 72 }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
@@ -15,7 +13,6 @@ const Loader: React.FC<LoaderProps> = ({ label = "Loading…", fullScreen = true
   const fg = theme.palette.background.paper;
   const ringTrack = alpha(isDark ? "#fff" : "#000", isDark ? 0.08 : 0.06);
   const glow = alpha(theme.palette.primary.main, 0.35);
-
   return (
     <Box
       role="status"
@@ -87,7 +84,11 @@ const Loader: React.FC<LoaderProps> = ({ label = "Loading…", fullScreen = true
             mask: `radial-gradient(farthest-side, transparent calc(50% - 6px), #000 calc(50% - 5px))`,
             WebkitMask: `radial-gradient(farthest-side, transparent calc(50% - 6px), #000 calc(50% - 5px))`,
             animation: "spin 1.1s linear infinite",
-            "@keyframes spin": { to: { transform: "rotate(1turn)" } },
+            "@keyframes spin": {
+              to: {
+                transform: "rotate(1turn)",
+              },
+            },
           }}
         />
         <Box
@@ -114,5 +115,4 @@ const Loader: React.FC<LoaderProps> = ({ label = "Loading…", fullScreen = true
     </Box>
   );
 };
-
 export default Loader;

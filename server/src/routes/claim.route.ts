@@ -7,15 +7,10 @@ import {
   getClaim,
   updateClaimHandler,
 } from "../controllers/claim.controller";
-
 const router = Router();
-
 router.get("/", getAllClaims);
 router.get("/:id", getClaim);
-
 router.post("/", upload.array("files", 10), createClaimHandler);
 router.put("/:id", upload.array("files", 10), updateClaimHandler);
-
 router.delete("/:id", deleteClaimHandler);
-
 export default router;

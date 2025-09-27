@@ -37,7 +37,6 @@ import { validateClaimForm } from "@/utils/validators.js";
 import ClaimSummary from "./ClaimSummary.js";
 import apiService from "@services/apiService.js";
 import { Claim, ClaimFormData, FormErrors } from "@typings";
-
 interface ClaimFormProps {
   onSubmit: (data: ClaimFormData, files: File[]) => void;
   summary: string;
@@ -45,10 +44,8 @@ interface ClaimFormProps {
   initial?: Partial<Claim>;
   mode?: "view" | "edit" | "create";
 }
-
 const MIN_POLICY_LENGTH = 6;
 const DEBOUNCE_MS = 400;
-
 const fadeInUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -58,7 +55,6 @@ const pulse = keyframes`
   70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
   100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
 `;
-
 const ClaimForm: React.FC<ClaimFormProps> = ({
   onSubmit,
   initial,
@@ -82,7 +78,6 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const readOnly = mode === "view";
   const HideHeaderForm = mode === "view" || mode === "edit";
-
   const checkPolicyExists = useCallback(async (id: string) => {
     if (!id || id.length < MIN_POLICY_LENGTH) return;
     setPolicyChecking(true);
@@ -105,12 +100,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       setPolicyChecking(false);
     }
   }, []);
-
   const debouncedCheck = useMemo(
     () => debounce((id: string) => checkPolicyExists(id), DEBOUNCE_MS),
     [checkPolicyExists]
   );
-
   const handleInputChange =
     (field: keyof ClaimFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -120,9 +113,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
         [field]: field === "policyId" ? v.toUpperCase() : v,
       }));
       if (field === "policyId") debouncedCheck(v.toUpperCase());
-      if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+      if (errors[field])
+        setErrors((prev) => ({
+          ...prev,
+          [field]: "",
+        }));
     };
-
   const pickFiles = (list: FileList | null) => {
     if (!list) return;
     const next: File[] = [];
@@ -135,14 +131,15 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
     const merged = [...files, ...next].slice(0, 10);
     setFiles(merged);
     if (merged.length && (errors as any).file) {
-      setErrors((prev) => ({ ...prev, file: "" }));
+      setErrors((prev) => ({
+        ...prev,
+        file: "",
+      }));
     }
   };
-
   const removeFileAt = (idx: number) => {
     setFiles((prev) => prev.filter((_, i) => i !== idx));
   };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const firstFile = files[0] ?? null;
@@ -169,7 +166,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       await onSubmit(formData, files);
       setSubmitSuccess(true);
       if (!initial) {
-        setFormData({ name: "", policyId: "", description: "" });
+        setFormData({
+          name: "",
+          policyId: "",
+          description: "",
+        });
         setFiles([]);
         setPolicyValid(null);
       }
@@ -177,16 +178,20 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
       setTimeout(() => navigate("/claims"), 1500);
     } catch (error) {
       console.error(error);
-      setErrors({ submit: "Failed to submit claim. Please try again." });
+      setErrors({
+        submit: "Failed to submit claim. Please try again.",
+      });
     }
   };
-
   return (
     <Container maxWidth="md">
       <Paper
         elevation={0}
         sx={{
-          p: { xs: 3, md: 5 },
+          p: {
+            xs: 3,
+            md: 5,
+          },
           borderRadius: 3,
           backgroundColor: theme.palette.background.paper,
           border: "1px solid",
@@ -213,7 +218,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
         )}
 
         <>
-          <Box sx={{ mb: 4, textAlign: "center" }}>
+          <Box
+            sx={{
+              mb: 4,
+              textAlign: "center",
+            }}
+          >
             <Typography
               variant="h3"
               component="h1"
@@ -226,12 +236,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                 WebkitTextFillColor: "transparent",
               }}
             >
-              {mode === "edit"
-                ? "Edit "
-                : mode === "view"
-                ? "View "
-                : "Submit "}{" "}
-              Your Claim
+              {mode === "edit" ? "Edit " : mode === "view" ? "View " : "Submit "} Your Claim
             </Typography>
             {!HideHeaderForm && (
               <Typography variant="body1" color="text.secondary">
@@ -239,7 +244,11 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               </Typography>
             )}
           </Box>
-          <Divider sx={{ mb: 4 }}>
+          <Divider
+            sx={{
+              mb: 4,
+            }}
+          >
             <Chip label="Claim Details" size="small" />
           </Divider>
         </>
@@ -248,7 +257,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
           component="form"
           id="claim-form"
           onSubmit={handleSubmit}
-          sx={{ mt: 3 }}
+          sx={{
+            mt: 3,
+          }}
         >
           <TextField
             fullWidth
@@ -270,7 +281,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&:hover fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
                 "&.Mui-focused fieldset": {
                   borderColor: theme.palette.primary.main,
                 },
@@ -290,13 +303,17 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               (policyChecking
                 ? "Checking policy..."
                 : policyValid === true
-                ? "Policy verified ✓"
-                : "Format: 6–12 alphanumeric characters")
+                  ? "Policy verified ✓"
+                  : "Format: 6–12 alphanumeric characters")
             }
             margin="normal"
             required
             disabled={loading || readOnly}
-            inputProps={{ style: { textTransform: "uppercase" } }}
+            inputProps={{
+              style: {
+                textTransform: "uppercase",
+              },
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -317,14 +334,15 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&:hover fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
                 "&.Mui-focused fieldset": {
                   borderColor: theme.palette.primary.main,
                 },
               },
               "& .MuiFormHelperText-root": {
-                color:
-                  policyValid === true ? theme.palette.success.main : undefined,
+                color: policyValid === true ? theme.palette.success.main : undefined,
               },
             }}
           />
@@ -340,10 +358,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             error={!!errors.description}
             helperText={
               errors.description ||
-              `${Math.max(
-                0,
-                formData.description.length
-              )}/20 characters minimum`
+              `${Math.max(0, formData.description.length)}/20 characters minimum`
             }
             margin="normal"
             required
@@ -352,7 +367,10 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               startAdornment: (
                 <InputAdornment
                   position="start"
-                  sx={{ alignSelf: "flex-start", mt: 1 }}
+                  sx={{
+                    alignSelf: "flex-start",
+                    mt: 1,
+                  }}
                 >
                   <DescriptionIcon color="action" />
                 </InputAdornment>
@@ -360,7 +378,9 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             }}
             sx={{
               "& .MuiOutlinedInput-root": {
-                "&:hover fieldset": { borderColor: theme.palette.primary.main },
+                "&:hover fieldset": {
+                  borderColor: theme.palette.primary.main,
+                },
                 "&.Mui-focused fieldset": {
                   borderColor: theme.palette.primary.main,
                 },
@@ -368,29 +388,34 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
             }}
           />
 
-          <Box sx={{ mt: 3, mb: 3 }}>
+          <Box
+            sx={{
+              mt: 3,
+              mb: 3,
+            }}
+          >
             <Paper
               variant="outlined"
               sx={{
                 p: 3,
                 borderStyle: "dashed",
-                borderColor: (errors as any).file
-                  ? theme.palette.error.main
-                  : "divider",
+                borderColor: (errors as any).file ? theme.palette.error.main : "divider",
                 borderRadius: 2,
                 bgcolor: theme.palette.background.default,
                 transition: "all 0.3s ease",
                 "&:hover": {
                   borderColor: theme.palette.primary.main,
-                  bgcolor: alpha(
-                    theme.palette.background.default,
-                    isDark ? 0.9 : 0.7
-                  ),
+                  bgcolor: alpha(theme.palette.background.default, isDark ? 0.9 : 0.7),
                 },
               }}
             >
               <Box
-                sx={{ display: "flex", alignItems: "center", gap: 2, mb: 2 }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 2,
+                  mb: 2,
+                }}
               >
                 <UploadIcon color="action" />
                 <Typography variant="subtitle1" fontWeight={600}>
@@ -399,15 +424,14 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
               </Box>
 
               <Stack
-                direction={{ xs: "column", sm: "row" }}
+                direction={{
+                  xs: "column",
+                  sm: "row",
+                }}
                 spacing={2}
                 alignItems="center"
               >
-                <Button
-                  variant="outlined"
-                  component="label"
-                  disabled={loading || readOnly}
-                >
+                <Button variant="outlined" component="label" disabled={loading || readOnly}>
                   Choose PDFs
                   <input
                     type="file"
@@ -436,20 +460,21 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                       key={`${f.name}-${idx}`}
                       secondaryAction={
                         !readOnly && (
-                          <IconButton
-                            edge="end"
-                            onClick={() => removeFileAt(idx)}
-                          >
+                          <IconButton edge="end" onClick={() => removeFileAt(idx)}>
                             <DeleteIcon fontSize="small" />
                           </IconButton>
                         )
                       }
-                      sx={{ px: 1 }}
+                      sx={{
+                        px: 1,
+                      }}
                     >
                       <ListItemText
                         primary={f.name}
                         secondary={`${(f.size / 1024 / 1024).toFixed(2)} MB`}
-                        primaryTypographyProps={{ noWrap: true }}
+                        primaryTypographyProps={{
+                          noWrap: true,
+                        }}
                       />
                     </ListItem>
                   ))}
@@ -460,7 +485,13 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
 
           {errors.submit && (
             <Zoom in>
-              <Alert severity="error" sx={{ mb: 3, borderRadius: 2 }}>
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 3,
+                  borderRadius: 2,
+                }}
+              >
                 {errors.submit}
               </Alert>
             </Zoom>
@@ -468,14 +499,26 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
 
           {submitSuccess && (
             <Zoom in>
-              <Alert severity="success" sx={{ mb: 3, borderRadius: 2 }}>
+              <Alert
+                severity="success"
+                sx={{
+                  mb: 3,
+                  borderRadius: 2,
+                }}
+              >
                 Claim submitted successfully! Redirecting to your claims...
               </Alert>
             </Zoom>
           )}
 
           {!readOnly && (
-            <Box sx={{ mt: 4, display: "flex", justifyContent: "center" }}>
+            <Box
+              sx={{
+                mt: 4,
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
               <Button
                 type="submit"
                 variant="contained"
@@ -487,10 +530,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                   py: 1.5,
                   borderRadius: 2,
                   background: loading ? undefined : grad,
-                  boxShadow: `0 4px 15px ${alpha(
-                    theme.palette.primary.main,
-                    0.3
-                  )}`,
+                  boxShadow: `0 4px 15px ${alpha(theme.palette.primary.main, 0.3)}`,
                   textTransform: "none",
                   fontSize: "1.1rem",
                   fontWeight: 600,
@@ -500,13 +540,12 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
                     background: loading
                       ? undefined
                       : `linear-gradient(135deg, ${theme.palette.secondary.main} 0%, ${theme.palette.primary.main} 100%)`,
-                    boxShadow: `0 6px 20px ${alpha(
-                      theme.palette.primary.main,
-                      0.4
-                    )}`,
+                    boxShadow: `0 6px 20px ${alpha(theme.palette.primary.main, 0.4)}`,
                     transform: "translateY(-2px)",
                   },
-                  "&:active": { transform: "translateY(0)" },
+                  "&:active": {
+                    transform: "translateY(0)",
+                  },
                 }}
               >
                 {loading ? "Submitting..." : "Submit Claim"}
@@ -517,14 +556,19 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
 
         {summary && (
           <Fade in>
-            <Box sx={{ mt: 4 }}>
-              <Divider sx={{ mb: 3 }}>
+            <Box
+              sx={{
+                mt: 4,
+              }}
+            >
+              <Divider
+                sx={{
+                  mb: 3,
+                }}
+              >
                 <Chip label="AI Summary" size="small" color="primary" />
               </Divider>
-              <ClaimSummary
-                defaultValue={initial?.summary ?? ""}
-                summary={summary}
-              />
+              <ClaimSummary defaultValue={initial?.summary ?? ""} summary={summary} />
             </Box>
           </Fade>
         )}
@@ -559,5 +603,4 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
     </Container>
   );
 };
-
 export default ClaimForm;

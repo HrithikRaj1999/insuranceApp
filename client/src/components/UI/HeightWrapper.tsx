@@ -1,6 +1,5 @@
 import { Box, useTheme, useMediaQuery, BoxProps } from "@mui/material";
 import React, { ReactNode } from "react";
-
 const HeightWrapper = ({
   children,
   width = "100%",
@@ -15,21 +14,10 @@ const HeightWrapper = ({
     <Box
       sx={{
         width: isMobile ? "100%" : width,
-        height: `calc(100vh - ${
-          isMobile ? theme.spacing(0) : theme.spacing(4)
-        })`,
+        height: `calc(100vh - ${isMobile ? theme.spacing(0) : theme.spacing(4)})`,
         display: "flex",
         flexDirection: "column",
         overflowY: "scroll",
-
-
-
-
-
-
-
-
-
         boxSizing: "border-box",
         maxWidth: "100vw",
         ...rest,
@@ -39,5 +27,4 @@ const HeightWrapper = ({
     </Box>
   );
 };
-
 export default HeightWrapper;

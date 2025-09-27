@@ -1,4 +1,3 @@
-
 import React from "react";
 import {
   Box,
@@ -11,17 +10,29 @@ import {
   Stack,
 } from "@mui/material";
 import { useThemeMode } from "@context/ThemeContext";
-
 const SettingsPage: React.FC = () => {
   const { mode, setMode, toggle } = useThemeMode();
-
   return (
-    <Container maxWidth="sm" sx={{ py: 4 }}>
-      <Paper variant="outlined" sx={{ p: 3 }}>
+    <Container
+      maxWidth="sm"
+      sx={{
+        py: 4,
+      }}
+    >
+      <Paper
+        variant="outlined"
+        sx={{
+          p: 3,
+        }}
+      >
         <Typography variant="h5" fontWeight={700} gutterBottom>
           Settings
         </Typography>
-        <Divider sx={{ my: 2 }} />
+        <Divider
+          sx={{
+            my: 2,
+          }}
+        />
 
         <Typography variant="subtitle1" gutterBottom>
           Theme
@@ -42,7 +53,11 @@ const SettingsPage: React.FC = () => {
           </ToggleButtonGroup>
         </Stack>
 
-        <Box sx={{ mt: 2 }}>
+        <Box
+          sx={{
+            mt: 2,
+          }}
+        >
           <Typography variant="body2" color="text.secondary">
             Your preference is saved locally and applied across the app.
           </Typography>
@@ -51,5 +66,4 @@ const SettingsPage: React.FC = () => {
     </Container>
   );
 };
-
 export default SettingsPage;

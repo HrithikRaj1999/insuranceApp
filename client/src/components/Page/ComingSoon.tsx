@@ -1,7 +1,6 @@
 import React from "react";
 import { Box, Typography, Chip, Paper } from "@mui/material";
 import { keyframes } from "@mui/system";
-
 const float = keyframes`
   0% {
     transform: translateY(0px) rotate(0deg);
@@ -19,7 +18,6 @@ const float = keyframes`
     transform: translateY(0px) rotate(0deg);
   }
 `;
-
 const pulse = keyframes`
   0% {
     transform: scale(1);
@@ -34,7 +32,6 @@ const pulse = keyframes`
     opacity: 1;
   }
 `;
-
 const smokeUp = keyframes`
   0% {
     transform: translateY(0) scale(1);
@@ -48,7 +45,6 @@ const smokeUp = keyframes`
     opacity: 0;
   }
 `;
-
 const twinkle = keyframes`
   0%, 100% {
     opacity: 0.3;
@@ -59,7 +55,6 @@ const twinkle = keyframes`
     transform: scale(1.2);
   }
 `;
-
 const flicker = keyframes`
   0% {
     transform: scaleY(1) scaleX(1);
@@ -70,7 +65,6 @@ const flicker = keyframes`
     opacity: 1;
   }
 `;
-
 const fadeInUp = keyframes`
   from {
     opacity: 0;
@@ -81,7 +75,6 @@ const fadeInUp = keyframes`
     transform: translateY(0);
   }
 `;
-
 const loading = keyframes`
   0% {
     transform: translateX(-100%);
@@ -93,7 +86,6 @@ const loading = keyframes`
     transform: translateX(300%);
   }
 `;
-
 export const RocketAnimation: React.FC = () => (
   <Box
     sx={{
@@ -127,24 +119,8 @@ export const RocketAnimation: React.FC = () => (
         <circle cx="60" cy="35" r="6" fill="#63b3ed" />
         <circle cx="62" cy="33" r="2" fill="#bee3f8" opacity="0.8" />
 
-        <rect
-          x="55"
-          y="50"
-          width="10"
-          height="3"
-          rx="1"
-          fill="#4a5568"
-          opacity="0.5"
-        />
-        <rect
-          x="55"
-          y="55"
-          width="10"
-          height="3"
-          rx="1"
-          fill="#4a5568"
-          opacity="0.5"
-        />
+        <rect x="55" y="50" width="10" height="3" rx="1" fill="#4a5568" opacity="0.5" />
+        <rect x="55" y="55" width="10" height="3" rx="1" fill="#4a5568" opacity="0.5" />
       </g>
 
       <g
@@ -168,7 +144,11 @@ export const RocketAnimation: React.FC = () => (
         <circle cx="62" cy="108" r="2" fill="#9ca3af" />
       </g>
 
-      <g style={{ animation: `${twinkle} 2s ease-in-out infinite` }}>
+      <g
+        style={{
+          animation: `${twinkle} 2s ease-in-out infinite`,
+        }}
+      >
         <circle cx="20" cy="30" r="1" fill="#ffd93d" />
         <circle cx="100" cy="40" r="1" fill="#ffd93d" />
         <circle cx="15" cy="60" r="1" fill="#ffd93d" />
@@ -178,13 +158,7 @@ export const RocketAnimation: React.FC = () => (
       </g>
 
       <defs>
-        <linearGradient
-          id="rocketBodyGradient"
-          x1="0%"
-          y1="0%"
-          x2="0%"
-          y2="100%"
-        >
+        <linearGradient id="rocketBodyGradient" x1="0%" y1="0%" x2="0%" y2="100%">
           <stop offset="0%" stopColor="#764ba2" />
           <stop offset="100%" stopColor="#667eea" />
         </linearGradient>
@@ -192,8 +166,9 @@ export const RocketAnimation: React.FC = () => (
     </svg>
   </Box>
 );
-
-const ComingSoon: React.FC<{ feature: string }> = ({ feature }) => (
+const ComingSoon: React.FC<{
+  feature: string;
+}> = ({ feature }) => (
   <Box
     sx={{
       display: "flex",
@@ -220,7 +195,13 @@ const ComingSoon: React.FC<{ feature: string }> = ({ feature }) => (
       }}
     />
 
-    <Box sx={{ mb: 3, position: "relative", zIndex: 1 }}>
+    <Box
+      sx={{
+        mb: 3,
+        position: "relative",
+        zIndex: 1,
+      }}
+    >
       <RocketAnimation />
     </Box>
 
@@ -309,9 +290,7 @@ const ComingSoon: React.FC<{ feature: string }> = ({ feature }) => (
             border: "1px solid",
             borderColor: "divider",
             borderRadius: 2,
-            animation: `${fadeInUp} 0.8s ease-out ${
-              0.4 + index * 0.1
-            }s backwards`,
+            animation: `${fadeInUp} 0.8s ease-out ${0.4 + index * 0.1}s backwards`,
             "&:hover": {
               borderColor: "#667eea",
               transform: "translateY(-2px)",
@@ -327,5 +306,4 @@ const ComingSoon: React.FC<{ feature: string }> = ({ feature }) => (
     </Box>
   </Box>
 );
-
 export default ComingSoon;

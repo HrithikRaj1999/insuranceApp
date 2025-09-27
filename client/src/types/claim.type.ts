@@ -1,7 +1,10 @@
 export interface Claim {
   _id?: string;
   name: string;
-  policy: { _id: string; policyNumber: string };
+  policy: {
+    _id: string;
+    policyNumber: string;
+  };
   description: string;
   summary?: string;
   fileUrl?: string;
@@ -11,18 +14,15 @@ export interface Claim {
   createdAt?: string;
   updatedAt?: string;
 }
-
 export interface ClaimFormData {
   name: string;
   policyId: string;
   description: string;
 }
-
 export interface ApiError {
   error: string;
   message?: string;
 }
-
 export interface FormErrors {
   [key: string]: string;
 }
