@@ -22,6 +22,7 @@ jobs:
           script: |
             sudo rm -rf ~/insuranceApp
             git clone https://github.com/HrithikRaj1999/insuranceApp
+            sudo cp -r env insuranceApp/
             cd /home/ubuntu/insuranceApp/server
             sudo docker build -t insurance-be:latest .
             cd /home/ubuntu/insuranceApp/docker
