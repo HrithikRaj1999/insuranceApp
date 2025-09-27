@@ -175,7 +175,7 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
         setPolicyValid(null);
       }
       setErrors({});
-      setTimeout(() => navigate("/claims"), 1500);
+      setTimeout(() => navigate("/claims"), 1000);
     } catch (error) {
       console.error(error);
       setErrors({

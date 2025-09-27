@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "nodemon",
-    "build": "tsc",
+    "dev": "nodemon --watch src --exec ts-node src/server.ts",
+    "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js"
   },
   "dependencies": {
@@ -22,7 +22,9 @@
     "mongoose": "^8.18.2",
     "morgan": "^1.10.1",
     "multer": "^1.4.5-lts.1",
-    "openai": "^4.104.0"
+    "openai": "^4.104.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.2"
   },
   "devDependencies": {
     "@types/aws-sdk": "^0.0.42",
@@ -34,8 +36,6 @@
     "@types/morgan": "^1.9.10",
     "@types/multer": "^1.4.13",
     "@types/node": "^20.19.17",
-    "nodemon": "^3.1.10",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.9.2"
+    "nodemon": "^3.1.10"
   }
 }
