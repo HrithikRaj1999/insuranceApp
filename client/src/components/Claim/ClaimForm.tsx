@@ -129,7 +129,8 @@ const ClaimForm: React.FC<ClaimFormProps> = ({
     () => debounce((id: string) => checkPolicyExists(id), DEBOUNCE_MS),
     [checkPolicyExists]
   );
-
+ 
+  
   const handleInputChange =
     (field: keyof ClaimFormData) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

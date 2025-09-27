@@ -8,13 +8,13 @@ import {
 import { getSignedUrl as presign } from "@aws-sdk/s3-request-presigner";
 import fs from "fs";
 import path from "path";
-const region = process.env.AWS_REGION || "us-east-1";
-const bucket = process.env.S3_BUCKET_NAME || "";
-const keyPrefix = (process.env.AWS_S3_PREFIX || "claims").replace(/^\/+|\/+$/g, "");
+const region = () => process.env.AWS_REGION;
+const bucket = () => process.env.S3_BUCKET_NAME;
+const keyPrefix = () => process.env.AWS_S3_PREFIX!.replace(/^\/+|\/+$/g, "");
 const isDev = () => process.env.NODE_ENV === "development";
-const defaultACL = process.env.S3_OBJECT_ACL || "public-read";
+const defaultACL = () => process.env.S3_OBJECT_ACL;
 const s3 = new S3Client({
-  region,
+  region: region(),
 });
 export interface FileUploadResult {
   s3Url: string | null;
@@ -39,7 +39,7 @@ function canUseS3():
       ok: false;
       reason: string;
     } {
-  if (!bucket) {
+  if (!bucket()) {
     return {
       ok: false,
       reason: "S3_BUCKET_NAME is not configured",
@@ -81,10 +81,12 @@ function finalizeLocalFile(tempPath: string): {
     localPath,
   };
 }
-export async function uploadToS3(file: Express.Multer.File): Promise<FileUploadResult> {
+export async function uploadToS3(
+  file: Express.Multer.File
+): Promise<FileUploadResult> {
   const pre = canUseS3();
   const safeName = path.basename(file.originalname).replace(/\s/g, "-");
-  const key = `${keyPrefix}/${Date.now()}-${safeName}`;
+  const key = `${keyPrefix()}/${Date.now()}-${safeName}`;
   if (!pre.ok) {
     const { localPath } = finalizeLocalFile(file.path);
     warn("upload-skip", `Skipping S3 upload: ${pre.reason}`, {
@@ -101,14 +103,16 @@ export async function uploadToS3(file: Express.Multer.File): Promise<FileUploadR
   try {
     const bodyStream = fs.createReadStream(file.path);
     const putParams: PutObjectCommandInput = {
-      Bucket: bucket,
+      Bucket: bucket(),
       Key: key,
       Body: bodyStream,
       ContentType: file.mimetype,
-      ACL: defaultACL as any,
+      ACL: defaultACL() as any,
     };
     await s3.send(new PutObjectCommand(putParams));
-    const s3Url = `https://${bucket}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
+    const s3Url = `https://${bucket()}.s3.${region}.amazonaws.com/${encodeURIComponent(
+      key
+    )}`;
     const { localPath } = finalizeLocalFile(file.path);
     return {
       s3Url,
@@ -119,7 +123,7 @@ export async function uploadToS3(file: Express.Multer.File): Promise<FileUploadR
     const { localPath } = finalizeLocalFile(file.path);
     warn("upload-fail", "S3 upload failed—returning local-only result", {
       error: String(e),
-      bucket,
+      bucket: bucket(),
       key,
     });
     return {
@@ -146,7 +150,7 @@ export async function deleteFromS3(key: string): Promise<void> {
   try {
     await s3.send(
       new DeleteObjectCommand({
-        Bucket: bucket,
+        Bucket: bucket(),
         Key: key,
       })
     );
@@ -157,7 +161,10 @@ export async function deleteFromS3(key: string): Promise<void> {
     });
   }
 }
-export async function getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
+export async function getSignedUrl(
+  key: string,
+  expiresIn: number = 3600
+): Promise<string> {
   const pre = canUseS3();
   if (!pre.ok) {
     warn("signedurl-skip", `Skipping signed URL: ${pre.reason}`, {
@@ -171,7 +178,7 @@ export async function getSignedUrl(key: string, expiresIn: number = 3600): Promi
   }
   try {
     const cmd = new GetObjectCommand({
-      Bucket: bucket,
+      Bucket: bucket(),
       Key: key,
     });
     return await presign(s3, cmd, {
@@ -197,10 +204,10 @@ export async function verifyS3Access(): Promise<{
     };
   }
   try {
-    const testKey = `${keyPrefix}/health-check-${Date.now()}.txt`;
+    const testKey = `${keyPrefix()}/health-check-${Date.now()}.txt`;
     await s3.send(
       new PutObjectCommand({
-        Bucket: bucket,
+        Bucket: bucket(),
         Key: testKey,
         Body: "health check",
         ContentType: "text/plain",
@@ -208,7 +215,7 @@ export async function verifyS3Access(): Promise<{
     );
     await s3.send(
       new DeleteObjectCommand({
-        Bucket: bucket,
+        Bucket: bucket(),
         Key: testKey,
       })
     );
