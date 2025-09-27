@@ -1,4 +1,3 @@
-// aiService.ts — OpenRouter-only (OpenAI SDK pointed at OpenRouter)
 import OpenAI from "openai";
 import dotenv from "dotenv";
 dotenv.config();
@@ -21,7 +20,8 @@ dotenv.config();
  *   OPENAI_TEMPERATURE=0.3
  */
 const orKey = process.env.OPENROUTER_API_KEY || "";
-const orBase = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+const orBase =
+  process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
 const orModel = process.env.OPENROUTER_MODEL || "deepseek/deepseek-r1:free";
 
 const refHeader = process.env.OPENROUTER_HTTP_REFERER || "";
@@ -38,14 +38,12 @@ const useMockFlag = process.env.USE_MOCK_AI === "true";
 const paidEnabled = allowPaid && !useMockFlag && !!orKey;
 
 // OpenAI SDK works with OpenRouter by overriding baseURL + apiKey
-// Docs: set base to https://openrouter.ai/api/v1 and use your OpenRouter API key.
-const client =
-  paidEnabled
-    ? new OpenAI({
-        apiKey: orKey,
-        baseURL: orBase,
-      })
-    : null;
+const client = paidEnabled
+  ? new OpenAI({
+      apiKey: orKey,
+      baseURL: orBase,
+    })
+  : null;
 
 /**
  * ===========
@@ -67,18 +65,29 @@ function mockSummary(description: string, reason: string): string {
 
 function normalizeCategory(s?: string | null): string {
   const v = (s || "").toLowerCase().trim();
-  if (["auto", "property", "health", "life", "liability", "other"].includes(v)) return v;
+  if (["auto", "property", "health", "life", "liability", "other"].includes(v))
+    return v;
   return "other";
 }
 
 function mockCategorize(description: string): string {
   const d = (description || "").toLowerCase();
-  if (/\b(car|vehicle|accident|rear[- ]?end|bumper|fender|collision)\b/.test(d)) return "auto";
-  if (/\b(water|flood|fire|smoke|roof|pipe|leak|storm|theft|burglary|home|house)\b/.test(d))
+  if (/\b(car|vehicle|accident|rear[- ]?end|bumper|fender|collision)\b/.test(d))
+    return "auto";
+  if (
+    /\b(water|flood|fire|smoke|roof|pipe|leak|storm|theft|burglary|home|house)\b/.test(
+      d,
+    )
+  )
     return "property";
-  if (/\b(hospital|injur(?:y|ies)|doctor|medical|treatment|surgery)\b/.test(d)) return "health";
-  if (/\b(life insurance|policyholder deceased|death|beneficiary)\b/.test(d)) return "life";
-  if (/\b(liability|negligence|third[- ]?party|lawsuit|slip and fall)\b/.test(d)) return "liability";
+  if (/\b(hospital|injur(?:y|ies)|doctor|medical|treatment|surgery)\b/.test(d))
+    return "health";
+  if (/\b(life insurance|policyholder deceased|death|beneficiary)\b/.test(d))
+    return "life";
+  if (
+    /\b(liability|negligence|third[- ]?party|lawsuit|slip and fall)\b/.test(d)
+  )
+    return "liability";
   return "other";
 }
 
@@ -86,12 +95,18 @@ function mockUrgency(description: string): "low" | "medium" | "high" {
   const d = (description || "").toLowerCase();
   if (
     /\b(injury|injuries|hospital|emergency|urgent|immediate|unsafe|gas leak|electrical fire)\b/.test(
-      d
+      d,
     )
   )
     return "high";
-  if (/\b(flood|burst pipe|no power|roof leak|major damage|theft ongoing)\b/.test(d)) return "high";
-  if (/\b(minor|cosmetic|scratch|small dent|no injuries|no rush)\b/.test(d)) return "low";
+  if (
+    /\b(flood|burst pipe|no power|roof leak|major damage|theft ongoing)\b/.test(
+      d,
+    )
+  )
+    return "high";
+  if (/\b(minor|cosmetic|scratch|small dent|no injuries|no rush)\b/.test(d))
+    return "low";
   return "medium";
 }
 
@@ -116,16 +131,22 @@ async function callChat({
   if (!paidEnabled) throw new Error("paidDisabled");
   if (!client) throw new Error("clientNotConfigured");
 
+  // Build request-level headers (must be in the RequestOptions, not in the body)
   const extra_headers: Record<string, string> = {};
-  if (refHeader) extra_headers["HTTP-Referer"] = refHeader; // attribution headers (optional)
+  if (refHeader) extra_headers["HTTP-Referer"] = refHeader; // optional attribution for OpenRouter rankings
   if (titleHeader) extra_headers["X-Title"] = titleHeader;
 
-  const resp = await client.chat.completions.create({
+  // Body only contains valid fields
+  const body = {
     model,
     messages,
     max_tokens: max_tokens ?? maxTokens,
     temperature: temperature ?? 0.2,
-    extra_headers,
+  };
+
+  // ✅ Pass headers as the second argument (RequestOptions) — fixes TS2769
+  const resp = await client.chat.completions.create(body, {
+    headers: extra_headers,
   });
 
   const content = resp.choices?.[0]?.message?.content?.trim();
@@ -147,10 +168,10 @@ export async function generateSummary(description: string): Promise<string> {
     const reason = !allowPaid
       ? "ALLOW_OPENROUTER_PAID=false"
       : useMockFlag
-      ? "USE_MOCK_AI=true"
-      : !orKey
-      ? "OPENROUTER_API_KEY missing"
-      : "Unknown gating";
+        ? "USE_MOCK_AI=true"
+        : !orKey
+          ? "OPENROUTER_API_KEY missing"
+          : "Unknown gating";
     return mockSummary(description, reason);
   }
 
@@ -170,20 +191,24 @@ export async function generateSummary(description: string): Promise<string> {
     });
     return content;
   } catch (e: any) {
-    warn("error", "OpenRouter call failed — using mock", { error: e?.message || String(e) });
+    warn("error", "OpenRouter call failed — using mock", {
+      error: e?.message || String(e),
+    });
     return mockSummary(description, "API error");
   }
 }
 
-export async function categorizeClaimType(description: string): Promise<string> {
+export async function categorizeClaimType(
+  description: string,
+): Promise<string> {
   if (!paidEnabled) {
     const reason = !allowPaid
       ? "ALLOW_OPENROUTER_PAID=false"
       : useMockFlag
-      ? "USE_MOCK_AI=true"
-      : !orKey
-      ? "OPENROUTER_API_KEY missing"
-      : "Unknown gating";
+        ? "USE_MOCK_AI=true"
+        : !orKey
+          ? "OPENROUTER_API_KEY missing"
+          : "Unknown gating";
     warn("mock-cat", `Using mock categorization: ${reason}`);
     return mockCategorize(description);
   }
@@ -202,29 +227,33 @@ export async function categorizeClaimType(description: string): Promise<string> 
       max_tokens: 8,
       temperature: 0.1,
     });
-    const cat = normalizeCategory(content);
+
+    // Sometimes models add punctuation/newlines — normalize safely
+    const cat = normalizeCategory(content.split(/\s+/)[0]);
     if (cat === "other" && !content) {
       warn("empty-cat", "Empty category from API, using mock");
       return mockCategorize(description);
     }
     return cat;
   } catch (e: any) {
-    warn("error-cat", "OpenRouter categorize failed — using mock", { error: e?.message || String(e) });
+    warn("error-cat", "OpenRouter categorize failed — using mock", {
+      error: e?.message || String(e),
+    });
     return mockCategorize(description);
   }
 }
 
 export async function assessClaimUrgency(
-  description: string
+  description: string,
 ): Promise<"low" | "medium" | "high"> {
   if (!paidEnabled) {
     const reason = !allowPaid
       ? "ALLOW_OPENROUTER_PAID=false"
       : useMockFlag
-      ? "USE_MOCK_AI=true"
-      : !orKey
-      ? "OPENROUTER_API_KEY missing"
-      : "Unknown gating";
+        ? "USE_MOCK_AI=true"
+        : !orKey
+          ? "OPENROUTER_API_KEY missing"
+          : "Unknown gating";
     warn("mock-urgency", `Using mock urgency: ${reason}`);
     return mockUrgency(description);
   }
@@ -245,8 +274,16 @@ export async function assessClaimUrgency(
     });
 
     const raw = (content || "").toLowerCase().trim();
-    if (raw === "low" || raw === "medium" || raw === "high") return raw as "low" | "medium" | "high";
-    warn("unexpected-urgency", "Unexpected urgency output — using mock", { raw });
+    if (raw === "low" || raw === "medium" || raw === "high")
+      return raw as "low" | "medium" | "high";
+    // In case the model adds extra text, try to parse the first token
+    const first = raw.split(/\s+/)[0];
+    if (first === "low" || first === "medium" || first === "high")
+      return first as "low" | "medium" | "high";
+
+    warn("unexpected-urgency", "Unexpected urgency output — using mock", {
+      raw,
+    });
     return mockUrgency(description);
   } catch (e: any) {
     warn("error-urgency", "OpenRouter urgency failed — using mock", {
