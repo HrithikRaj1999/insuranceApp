@@ -1,6 +1,7 @@
 import React from "react";
 import { Box, Typography, Chip, Paper } from "@mui/material";
 import { keyframes } from "@mui/system";
+import HeightWrapper from "@components/UI/HeightWrapper";
 const float = keyframes`
   0% {
     transform: translateY(0px) rotate(0deg);
@@ -229,7 +230,9 @@ const ComingSoon: React.FC<{
         animation: `${fadeInUp} 0.8s ease-out 0.2s backwards`,
       }}
     >
-      We're working hard to bring you this feature. Stay tuned for updates!
+      We're working hard to bring you this feature.<br/>
+      Stay tuned for updates!<br/>
+      Susbscribe via email to get latest updates.
     </Typography>
 
     <Box

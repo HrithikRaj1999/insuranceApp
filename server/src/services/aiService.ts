@@ -89,7 +89,8 @@ export async function generateSummary(description: string): Promise<string> {
     }
     return summary;
   } catch (e: any) {
-    warn("error", "OpenAI call failed—falling back to mock", {
+    console.log(e)
+    warn("error", "OpenAI call failed back to mock", {
       error: e?.message || String(e),
     });
     return mockSummary(description, "API error");
