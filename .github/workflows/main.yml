@@ -1,0 +1,31 @@
+name: Deploy Insurance App
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Deploy to server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.PORT || 22 }}
+          script: |
+            # Navigate to server directory and build backend
+            cd /home/ubuntu/insuranceApp/server
+            sudo docker build -t insurance-be:latest .
+            
+            # Navigate to docker directory and run frontend with compose
+            cd /home/ubuntu/insuranceApp/docker
+            sudo docker compose --env-file ../env/fe.env up --build -d insurance-fe
+            
+            # Run docker compose up
+            docker compose up -d
