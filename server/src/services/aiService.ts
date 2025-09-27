@@ -1,43 +1,49 @@
-// aiService.ts
+// aiService.ts — OpenRouter-only (OpenAI SDK pointed at OpenRouter)
 import OpenAI from "openai";
 import dotenv from "dotenv";
-
 dotenv.config();
 
 /**
  * ===========
  * ENV / CONFIG
  * ===========
+ * Required:
+ *   OPENROUTER_API_KEY
+ * Optional but recommended:
+ *   OPENROUTER_MODEL           (e.g., "deepseek/deepseek-r1:free" or "openai/gpt-4o")
+ *   OPENROUTER_BASE_URL        (default "https://openrouter.ai/api/v1")
+ *   OPENROUTER_HTTP_REFERER    (your site URL for rankings)
+ *   OPENROUTER_X_TITLE         (your app name for rankings)
+ * Gating / knobs (reuse your old ones):
+ *   ALLOW_OPENROUTER_PAID=true|false
+ *   USE_MOCK_AI=true|false
+ *   OPENAI_MAX_TOKENS=120
+ *   OPENAI_TEMPERATURE=0.3
  */
-const apiKey = process.env.OPENAI_API_KEY || "";
-const model = process.env.OPENAI_MODEL || "gpt-3.5-turbo";
+const orKey = process.env.OPENROUTER_API_KEY || "";
+const orBase = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
+const orModel = process.env.OPENROUTER_MODEL || "deepseek/deepseek-r1:free";
+
+const refHeader = process.env.OPENROUTER_HTTP_REFERER || "";
+const titleHeader = process.env.OPENROUTER_X_TITLE || "";
+
 const maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS || "100", 10);
 const temperature = parseFloat(process.env.OPENAI_TEMPERATURE || "0.3");
 
-const allowPaid = process.env.ALLOW_OPENAI_PAID === "true";
+const allowPaid =
+  process.env.ALLOW_OPENROUTER_PAID === "true" ||
+  process.env.ALLOW_AI_PAID === "true"; // keep compatibility with your old knob
 const useMockFlag = process.env.USE_MOCK_AI === "true";
 
-// New: provider switching — "openai" (default) or "deepseek"
-type Provider = "openai" | "deepseek";
-const provider: Provider =
-  (process.env.AI_PROVIDER as Provider) === "deepseek" ? "deepseek" : "openai";
+const paidEnabled = allowPaid && !useMockFlag && !!orKey;
 
-// DeepSeek config (only used when provider === "deepseek")
-const deepSeekApiKey = process.env.DEEPSEEK_API_KEY || "";
-const deepSeekBaseUrl = process.env.DEEPSEEK_API_URL || "https://api.deepseek.com/v1";
-const deepSeekModel = process.env.DEEPSEEK_MODEL || "deepseek-chat";
-
-// Effective paid enabled?
-const paidEnabled =
-  allowPaid &&
-  !useMockFlag &&
-  ((provider === "openai" && !!apiKey) || (provider === "deepseek" && !!deepSeekApiKey));
-
-// OpenAI client (only if provider is openai and paid enabled)
-const openai =
-  paidEnabled && provider === "openai"
+// OpenAI SDK works with OpenRouter by overriding baseURL + apiKey
+// Docs: set base to https://openrouter.ai/api/v1 and use your OpenRouter API key.
+const client =
+  paidEnabled
     ? new OpenAI({
-        apiKey,
+        apiKey: orKey,
+        baseURL: orBase,
       })
     : null;
 
@@ -46,7 +52,6 @@ const openai =
  * UTILITIES
  * ===========
  */
-
 function warn(label: string, msg: string, extra?: Record<string, unknown>) {
   const base = `[AI:${label}] ${msg}`;
   if (extra) console.warn(base, extra);
@@ -57,7 +62,6 @@ function mockSummary(description: string, reason: string): string {
   warn("mock", `Using mock summary: ${reason}`);
   const d = description ?? "";
   const truncated = d.substring(0, 150);
-  // Keep your original shape; avoid duplicating text twice:
   return `[Mock Summary] ${truncated}${d.length > 150 ? "..." : ""}`;
 }
 
@@ -93,9 +97,8 @@ function mockUrgency(description: string): "low" | "medium" | "high" {
 
 /**
  * ============================
- * LOW-LEVEL CHAT CALL ABSTRACTION
+ * LOW-LEVEL CHAT CALL
  * ============================
- * Returns content string or throws.
  */
 type ChatParams = {
   model: string;
@@ -104,50 +107,29 @@ type ChatParams = {
   temperature?: number;
 };
 
-async function callChat({ model, messages, max_tokens, temperature }: ChatParams): Promise<string> {
-  if (!paidEnabled) {
-    throw new Error("paidDisabled");
-  }
+async function callChat({
+  model,
+  messages,
+  max_tokens,
+  temperature,
+}: ChatParams): Promise<string> {
+  if (!paidEnabled) throw new Error("paidDisabled");
+  if (!client) throw new Error("clientNotConfigured");
 
-  if (provider === "openai") {
-    if (!openai) throw new Error("openaiNotConfigured");
-    const resp = await openai.chat.completions.create({
-      model,
-      messages,
-      max_tokens: max_tokens ?? maxTokens,
-      temperature: temperature ?? 0.2,
-    });
-    const content = resp.choices?.[0]?.message?.content?.trim();
-    if (!content) throw new Error("emptyOpenAIResponse");
-    return content;
-  }
+  const extra_headers: Record<string, string> = {};
+  if (refHeader) extra_headers["HTTP-Referer"] = refHeader; // attribution headers (optional)
+  if (titleHeader) extra_headers["X-Title"] = titleHeader;
 
-  // provider === "deepseek"
-  if (!deepSeekApiKey) throw new Error("deepseekKeyMissing");
-
-  // Node 18+ has global fetch; otherwise install `node-fetch`
-  const resp = await fetch(`${deepSeekBaseUrl}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${deepSeekApiKey}`,
-    },
-    body: JSON.stringify({
-      model,
-      messages,
-      max_tokens: max_tokens ?? maxTokens,
-      temperature: temperature ?? 0.2,
-    }),
+  const resp = await client.chat.completions.create({
+    model,
+    messages,
+    max_tokens: max_tokens ?? maxTokens,
+    temperature: temperature ?? 0.2,
+    extra_headers,
   });
 
-  if (!resp.ok) {
-    const text = await resp.text().catch(() => "");
-    throw new Error(`DeepSeek HTTP ${resp.status}: ${text}`);
-  }
-
-  const data: any = await resp.json();
-  const content: string | undefined = data?.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error("emptyDeepSeekResponse");
+  const content = resp.choices?.[0]?.message?.content?.trim();
+  if (!content) throw new Error("emptyResponse");
   return content;
 }
 
@@ -156,7 +138,6 @@ async function callChat({ model, messages, max_tokens, temperature }: ChatParams
  * PUBLIC APIs
  * ===========
  */
-
 export async function generateSummary(description: string): Promise<string> {
   if (!description || description.trim().length === 0) {
     return "[Mock Summary] Empty description provided.";
@@ -164,20 +145,18 @@ export async function generateSummary(description: string): Promise<string> {
 
   if (!paidEnabled) {
     const reason = !allowPaid
-      ? "ALLOW_OPENAI_PAID=false"
+      ? "ALLOW_OPENROUTER_PAID=false"
       : useMockFlag
       ? "USE_MOCK_AI=true"
-      : provider === "openai" && !apiKey
-      ? "OPENAI_API_KEY missing"
-      : provider === "deepseek" && !deepSeekApiKey
-      ? "DEEPSEEK_API_KEY missing"
+      : !orKey
+      ? "OPENROUTER_API_KEY missing"
       : "Unknown gating";
     return mockSummary(description, reason);
   }
 
   try {
     const content = await callChat({
-      model: provider === "deepseek" ? deepSeekModel : model,
+      model: orModel,
       messages: [
         {
           role: "system",
@@ -189,17 +168,9 @@ export async function generateSummary(description: string): Promise<string> {
       max_tokens: maxTokens,
       temperature,
     });
-    if (!content) {
-      warn("empty", "Empty response from provider, using mock");
-      return mockSummary(description, "Empty API response");
-    }
     return content;
   } catch (e: any) {
-    console.log(e);
-    warn("error", "Provider call failed — back to mock", {
-      provider,
-      error: e?.message || String(e),
-    });
+    warn("error", "OpenRouter call failed — using mock", { error: e?.message || String(e) });
     return mockSummary(description, "API error");
   }
 }
@@ -207,13 +178,11 @@ export async function generateSummary(description: string): Promise<string> {
 export async function categorizeClaimType(description: string): Promise<string> {
   if (!paidEnabled) {
     const reason = !allowPaid
-      ? "ALLOW_OPENAI_PAID=false"
+      ? "ALLOW_OPENROUTER_PAID=false"
       : useMockFlag
       ? "USE_MOCK_AI=true"
-      : provider === "openai" && !apiKey
-      ? "OPENAI_API_KEY missing"
-      : provider === "deepseek" && !deepSeekApiKey
-      ? "DEEPSEEK_API_KEY missing"
+      : !orKey
+      ? "OPENROUTER_API_KEY missing"
       : "Unknown gating";
     warn("mock-cat", `Using mock categorization: ${reason}`);
     return mockCategorize(description);
@@ -221,7 +190,7 @@ export async function categorizeClaimType(description: string): Promise<string> 
 
   try {
     const content = await callChat({
-      model: provider === "deepseek" ? deepSeekModel : model,
+      model: orModel,
       messages: [
         {
           role: "system",
@@ -240,10 +209,7 @@ export async function categorizeClaimType(description: string): Promise<string> 
     }
     return cat;
   } catch (e: any) {
-    warn("error-cat", "Provider categorize failed — using mock", {
-      provider,
-      error: e?.message || String(e),
-    });
+    warn("error-cat", "OpenRouter categorize failed — using mock", { error: e?.message || String(e) });
     return mockCategorize(description);
   }
 }
@@ -253,13 +219,11 @@ export async function assessClaimUrgency(
 ): Promise<"low" | "medium" | "high"> {
   if (!paidEnabled) {
     const reason = !allowPaid
-      ? "ALLOW_OPENAI_PAID=false"
+      ? "ALLOW_OPENROUTER_PAID=false"
       : useMockFlag
       ? "USE_MOCK_AI=true"
-      : provider === "openai" && !apiKey
-      ? "OPENAI_API_KEY missing"
-      : provider === "deepseek" && !deepSeekApiKey
-      ? "DEEPSEEK_API_KEY missing"
+      : !orKey
+      ? "OPENROUTER_API_KEY missing"
       : "Unknown gating";
     warn("mock-urgency", `Using mock urgency: ${reason}`);
     return mockUrgency(description);
@@ -267,7 +231,7 @@ export async function assessClaimUrgency(
 
   try {
     const content = await callChat({
-      model: provider === "deepseek" ? deepSeekModel : model,
+      model: orModel,
       messages: [
         {
           role: "system",
@@ -282,12 +246,10 @@ export async function assessClaimUrgency(
 
     const raw = (content || "").toLowerCase().trim();
     if (raw === "low" || raw === "medium" || raw === "high") return raw as "low" | "medium" | "high";
-
     warn("unexpected-urgency", "Unexpected urgency output — using mock", { raw });
     return mockUrgency(description);
   } catch (e: any) {
-    warn("error-urgency", "Provider urgency failed — using mock", {
-      provider,
+    warn("error-urgency", "OpenRouter urgency failed — using mock", {
       error: e?.message || String(e),
     });
     return mockUrgency(description);
@@ -296,14 +258,13 @@ export async function assessClaimUrgency(
 
 export function getAIServiceStatus() {
   return {
-    configuredKey:
-      provider === "openai" ? !!apiKey : provider === "deepseek" ? !!deepSeekApiKey : false,
+    configuredKey: !!orKey,
     paidEnabled,
     allowPaid,
     useMockFlag,
-    provider,
-    model: provider === "deepseek" ? deepSeekModel : model,
-    baseUrl: provider === "deepseek" ? deepSeekBaseUrl : "openai-sdk-default",
-    effectiveMode: paidEnabled ? `${provider}-paid` : "free-mock",
+    provider: "openrouter",
+    model: orModel,
+    baseUrl: orBase,
+    effectiveMode: paidEnabled ? "openrouter-paid-or-free-model" : "free-mock",
   };
 }
