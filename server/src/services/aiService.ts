@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -7,42 +7,15 @@ dotenv.config();
  * ENV / CONFIG
  * ===========
  */
-const orKey = process.env.OPENROUTER_API_KEY || "";
-const orBase = process.env.OPENROUTER_BASE_URL || "https://openrouter.ai/api/v1";
-const orModel = process.env.OPENROUTER_MODEL || "deepseek/deepseek-r1:free";
-
-const refHeader = process.env.OPENROUTER_HTTP_REFERER || "";
-const titleHeader = process.env.OPENROUTER_X_TITLE || "";
-
-const maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS || "100", 10);
-const temperature = parseFloat(process.env.OPENAI_TEMPERATURE || "0.3");
-
-const allowPaid = process.env.ALLOW_OPENROUTER_PAID === "true" || process.env.ALLOW_AI_PAID === "true";
+const geminiApiKey = process.env.GEMINI_API_KEY || "";
+const allowPaid = process.env.ALLOW_AI_PAID === "true";
 const useMockFlag = process.env.USE_MOCK_AI === "true";
 
-const paidEnabled = allowPaid && !useMockFlag && !!orKey;
+// Gemini is free up to certain limits, so we can enable it by default if API key is provided
+const geminiEnabled = !useMockFlag && !!geminiApiKey;
 
-// OpenAI SDK works with OpenRouter by overriding baseURL + apiKey
-const client = paidEnabled
-  ? new OpenAI({
-      apiKey: orKey,
-      baseURL: orBase,
-    })
-  : null;
-
-/**
- * ===========
- * FREE MODELS TO TRY (IN ORDER OF PREFERENCE)
- * ===========
- */
-const FREE_MODELS = [
-  "google/gemini-flash-1.5:free",
-  "meta-llama/llama-3.2-3b-instruct:free", 
-  "microsoft/phi-3-mini-128k-instruct:free",
-  "deepseek/deepseek-r1:free",
-  "qwen/qwen-2.5-7b-instruct:free",
-  "huggingface/zephyr-7b-beta:free"
-];
+// Initialize Gemini client
+const genAI = geminiEnabled ? new GoogleGenerativeAI(geminiApiKey) : null;
 
 /**
  * ===========
@@ -103,77 +76,59 @@ function mockUrgency(description: string): "low" | "medium" | "high" {
 
 /**
  * ============================
- * MULTI-MODEL CHAT CALL WITH FALLBACK
+ * GEMINI API CALL WITH RETRY
  * ============================
  */
-type ChatParams = {
-  messages: { role: "system" | "user" | "assistant"; content: string }[];
-  max_tokens?: number;
-  temperature?: number;
-};
+async function callGeminiWithRetry(
+  prompt: string,
+  systemInstruction?: string,
+  maxRetries: number = 3
+): Promise<string> {
+  if (!geminiEnabled) throw new Error("geminiDisabled");
+  if (!genAI) throw new Error("geminiClientNotConfigured");
 
-async function callChatWithFallback({
-  messages,
-  max_tokens,
-  temperature,
-}: ChatParams): Promise<{ content: string; modelUsed: string }> {
-  if (!paidEnabled) throw new Error("paidDisabled");
-  if (!client) throw new Error("clientNotConfigured");
+  // Use gemini-1.5-flash for free tier
+  const model = genAI.getGenerativeModel({ 
+    model: "gemini-1.5-flash",
+    systemInstruction: systemInstruction || "You are a helpful AI assistant."
+  });
 
-  // Build request-level headers
-  const extra_headers: Record<string, string> = {};
-  if (refHeader) extra_headers["HTTP-Referer"] = refHeader;
-  if (titleHeader) extra_headers["X-Title"] = titleHeader;
-
-  // Try the configured model first, then fallback to the list
-  const modelsToTry = [orModel, ...FREE_MODELS.filter(m => m !== orModel)];
-  
-  for (let i = 0; i < modelsToTry.length; i++) {
-    const model = modelsToTry[i];
-    
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      info("trying", `Attempting model ${i + 1}/${modelsToTry.length}: ${model}`);
+      info("trying", `Attempting Gemini call (${attempt}/${maxRetries})`);
       
-      const body = {
-        model,
-        messages,
-        max_tokens: max_tokens ?? maxTokens,
-        temperature: temperature ?? 0.2,
-      };
-
-      const resp = await client.chat.completions.create(body, {
-        headers: extra_headers,
-      });
-
-      const content = resp.choices?.[0]?.message?.content?.trim();
-      if (!content) {
-        warn("empty", `Model ${model} returned empty response, trying next...`);
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text().trim();
+      
+      if (!text) {
+        warn("empty", `Gemini returned empty response on attempt ${attempt}/${maxRetries}`);
+        if (attempt === maxRetries) {
+          throw new Error("Gemini returned empty response after all retries");
+        }
         continue;
       }
 
-      info("success", `✅ Model ${model} succeeded!`);
-      return { content, modelUsed: model };
+      info("success", `✅ Gemini succeeded on attempt ${attempt}!`);
+      return text;
       
     } catch (error: any) {
       const errorMsg = error?.message || String(error);
-      const status = error?.status || error?.response?.status;
+      warn("gemini-failed", `Gemini attempt ${attempt}/${maxRetries} failed: ${errorMsg}`);
       
-      warn("model-failed", `Model ${model} failed (${status}): ${errorMsg}`);
-      
-      // If it's the last model, throw the error
-      if (i === modelsToTry.length - 1) {
-        throw new Error(`All models failed. Last error: ${errorMsg}`);
+      // If it's the last attempt, throw the error
+      if (attempt === maxRetries) {
+        throw new Error(`Gemini failed after ${maxRetries} attempts. Last error: ${errorMsg}`);
       }
       
-      // For rate limits or temporary errors, add a small delay before trying next model
-      if (status === 429 || status >= 500) {
-        info("delay", `Waiting 1s before trying next model...`);
-        await new Promise(resolve => setTimeout(resolve, 1000));
-      }
+      // Wait before retry (exponential backoff)
+      const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+      info("delay", `Waiting ${delay}ms before retry...`);
+      await new Promise(resolve => setTimeout(resolve, delay));
     }
   }
   
-  throw new Error("All models exhausted");
+  throw new Error("All Gemini attempts exhausted");
 }
 
 /**
@@ -186,83 +141,69 @@ export async function generateSummary(description: string): Promise<string> {
     return "[Mock Summary] Empty description provided.";
   }
 
-  if (!paidEnabled) {
-    const reason = !allowPaid
-      ? "ALLOW_OPENROUTER_PAID=false"
-      : useMockFlag
-        ? "USE_MOCK_AI=true"
-        : !orKey
-          ? "OPENROUTER_API_KEY missing"
-          : "Unknown gating";
+  if (!geminiEnabled) {
+    const reason = useMockFlag
+      ? "USE_MOCK_AI=true"
+      : !geminiApiKey
+        ? "GEMINI_API_KEY missing"
+        : "Unknown gating";
     return mockSummary(description, reason);
   }
 
   try {
-    info("start", "Starting AI summary generation...");
+    info("start", "Starting Gemini summary generation...");
     
-    const result = await callChatWithFallback({
-      messages: [
-        {
-          role: "system",
-          content: "You are an insurance claim assistant. Summarize the following claim description in exactly 2 clear, concise sentences.",
-        },
-        { role: "user", content: description },
-      ],
-      max_tokens: maxTokens,
-      temperature,
-    });
+    const systemInstruction = "You are an insurance claim assistant. Summarize the following claim description in exactly 2 clear, concise sentences.";
     
-    info("summary-success", `Generated summary using ${result.modelUsed}`);
-    return result.content;
+    const result = await callGeminiWithRetry(
+      description,
+      systemInstruction
+    );
+    
+    info("summary-success", "Generated summary using Gemini");
+    return result;
     
   } catch (e: any) {
-    warn("error", "All OpenRouter models failed — using mock", {
+    warn("error", "Gemini failed — using mock", {
       error: e?.message || String(e),
     });
-    return mockSummary(description, "All models failed");
+    return mockSummary(description, "Gemini API failed");
   }
 }
 
 export async function categorizeClaimType(description: string): Promise<string> {
-  if (!paidEnabled) {
-    const reason = !allowPaid
-      ? "ALLOW_OPENROUTER_PAID=false"
-      : useMockFlag
-        ? "USE_MOCK_AI=true"
-        : !orKey
-          ? "OPENROUTER_API_KEY missing"
-          : "Unknown gating";
+  if (!geminiEnabled) {
+    const reason = useMockFlag
+      ? "USE_MOCK_AI=true"
+      : !geminiApiKey
+        ? "GEMINI_API_KEY missing"
+        : "Unknown gating";
     warn("mock-cat", `Using mock categorization: ${reason}`);
     return mockCategorize(description);
   }
 
   try {
-    info("start", "Starting AI categorization...");
+    info("start", "Starting Gemini categorization...");
     
-    const result = await callChatWithFallback({
-      messages: [
-        {
-          role: "system",
-          content: "Categorize this insurance claim into one of: auto, property, health, life, liability, other. Reply with only the category (one word).",
-        },
-        { role: "user", content: description },
-      ],
-      max_tokens: 8,
-      temperature: 0.1,
-    });
+    const systemInstruction = "Categorize this insurance claim into one of: auto, property, health, life, liability, other. Reply with only the category (one word).";
+    
+    const result = await callGeminiWithRetry(
+      description,
+      systemInstruction
+    );
 
     // Sometimes models add punctuation/newlines — normalize safely
-    const cat = normalizeCategory(result.content.split(/\s+/)[0]);
-    if (cat === "other" && !result.content) {
-      warn("empty-cat", "Empty category from API, using mock");
+    const cat = normalizeCategory(result.split(/\s+/)[0]);
+    if (cat === "other" && !result) {
+      warn("empty-cat", "Empty category from Gemini, using mock");
       return mockCategorize(description);
     }
     
-    info("cat-success", `Categorized as "${cat}" using ${result.modelUsed}`);
+    info("cat-success", `Categorized as "${cat}" using Gemini`);
     return cat;
     
   } catch (e: any) {
-    warn("error-cat", "All OpenRouter models failed — using mock", {
+    warn("error-cat", "Gemini failed — using mock", {
       error: e?.message || String(e),
     });
     return mockCategorize(description);
@@ -270,54 +211,47 @@ export async function categorizeClaimType(description: string): Promise<string> 
 }
 
 export async function assessClaimUrgency(description: string): Promise<"low" | "medium" | "high"> {
-  if (!paidEnabled) {
-    const reason = !allowPaid
-      ? "ALLOW_OPENROUTER_PAID=false"
-      : useMockFlag
-        ? "USE_MOCK_AI=true"
-        : !orKey
-          ? "OPENROUTER_API_KEY missing"
-          : "Unknown gating";
+  if (!geminiEnabled) {
+    const reason = useMockFlag
+      ? "USE_MOCK_AI=true"
+      : !geminiApiKey
+        ? "GEMINI_API_KEY missing"
+        : "Unknown gating";
     warn("mock-urgency", `Using mock urgency: ${reason}`);
     return mockUrgency(description);
   }
 
   try {
-    info("start", "Starting AI urgency assessment...");
+    info("start", "Starting Gemini urgency assessment...");
     
-    const result = await callChatWithFallback({
-      messages: [
-        {
-          role: "system",
-          content: "Assess the urgency of this insurance claim. Consider injuries, property damage, and time-sensitivity. Reply with only one word: low, medium, or high.",
-        },
-        { role: "user", content: description },
-      ],
-      max_tokens: 5,
-      temperature: 0.1,
-    });
+    const systemInstruction = "Assess the urgency of this insurance claim. Consider injuries, property damage, and time-sensitivity. Reply with only one word: low, medium, or high.";
+    
+    const result = await callGeminiWithRetry(
+      description,
+      systemInstruction
+    );
 
-    const raw = (result.content || "").toLowerCase().trim();
+    const raw = (result || "").toLowerCase().trim();
     if (raw === "low" || raw === "medium" || raw === "high") {
-      info("urgency-success", `Assessed as "${raw}" using ${result.modelUsed}`);
+      info("urgency-success", `Assessed as "${raw}" using Gemini`);
       return raw as "low" | "medium" | "high";
     }
     
     // In case the model adds extra text, try to parse the first token
     const first = raw.split(/\s+/)[0];
     if (first === "low" || first === "medium" || first === "high") {
-      info("urgency-success", `Assessed as "${first}" using ${result.modelUsed}`);
+      info("urgency-success", `Assessed as "${first}" using Gemini`);
       return first as "low" | "medium" | "high";
     }
 
     warn("unexpected-urgency", "Unexpected urgency output — using mock", {
       raw,
-      model: result.modelUsed,
+      model: "gemini-1.5-flash",
     });
     return mockUrgency(description);
     
   } catch (e: any) {
-    warn("error-urgency", "All OpenRouter models failed — using mock", {
+    warn("error-urgency", "Gemini failed — using mock", {
       error: e?.message || String(e),
     });
     return mockUrgency(description);
@@ -326,23 +260,20 @@ export async function assessClaimUrgency(description: string): Promise<"low" | "
 
 export function getAIServiceStatus() {
   return {
-    configuredKey: !!orKey,
-    paidEnabled,
-    allowPaid,
+    configuredKey: !!geminiApiKey,
+    geminiEnabled,
     useMockFlag,
-    provider: "openrouter",
-    primaryModel: orModel,
-    fallbackModels: FREE_MODELS,
-    baseUrl: orBase,
-    effectiveMode: paidEnabled ? "openrouter-with-fallback" : "free-mock",
+    provider: "google-gemini",
+    model: "gemini-1.5-flash",
+    effectiveMode: geminiEnabled ? "gemini-1.5-flash" : "free-mock",
   };
 }
 
-// Export the model list for debugging
+// Export the model info for debugging
 export function getAvailableModels() {
   return {
-    primary: orModel,
-    fallbacks: FREE_MODELS,
-    all: [orModel, ...FREE_MODELS.filter(m => m !== orModel)],
+    primary: "gemini-1.5-flash",
+    provider: "Google Gemini",
+    tier: "free (with limits)"
   };
 }
