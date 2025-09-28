@@ -48,16 +48,8 @@ const ClaimListPage: React.FC = () => {
     await loadClaims();
     navigate("/claims");
   };
-  return (
-    <Box>
-      <ClaimList
-        loading={loading}
-        claims={claims}
-        onView={handleViewClaim}
-        onEdit={handleEditClaim}
-        onDelete={handleDeleteClaim}
-      />
-    </Box>
-  );
+  return <Box>
+      <ClaimList loading={loading} claims={claims} onView={handleViewClaim} onEdit={handleEditClaim} onDelete={handleDeleteClaim} />
+    </Box>;
 };
 export default ClaimListPage;

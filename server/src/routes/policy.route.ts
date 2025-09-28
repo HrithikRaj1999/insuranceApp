@@ -1,12 +1,5 @@
 import { Router } from "express";
-import {
-  createPolicy,
-  getPolicy,
-  listPolicies,
-  updatePolicy,
-  deletePolicy,
-  policyExists,
-} from "../controllers/policy.controller";
+import { createPolicy, getPolicy, listPolicies, updatePolicy, deletePolicy, policyExists } from "../controllers/policy.controller";
 const router = Router();
 router.get("/exists", policyExists);
 router.get("/", listPolicies);

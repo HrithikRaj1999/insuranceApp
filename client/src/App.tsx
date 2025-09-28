@@ -6,18 +6,16 @@ import { ThemeModeProvider, useThemeMode } from "@/context/ThemeContext";
 import { router } from "@route/router.js";
 import "./App.css";
 const ThemedApp: React.FC = () => {
-  const { mode } = useThemeMode();
+  const {
+    mode
+  } = useThemeMode();
   const theme = React.useMemo(() => makeTheme(mode), [mode]);
-  return (
-    <ThemeProvider theme={theme}>
+  return <ThemeProvider theme={theme}>
       <CssBaseline />
       <RouterProvider router={router} />
-    </ThemeProvider>
-  );
+    </ThemeProvider>;
 };
-const App: React.FC = () => (
-  <ThemeModeProvider>
+const App: React.FC = () => <ThemeModeProvider>
     <ThemedApp />
-  </ThemeModeProvider>
-);
+  </ThemeModeProvider>;
 export default App;

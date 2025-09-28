@@ -15,10 +15,9 @@ const ClaimActions: React.FC<Props> = ({
   onEdit,
   onDelete,
   disableEdit,
-  disableDelete,
+  disableDelete
 }) => {
-  return (
-    <Stack direction="row" spacing={1}>
+  return <Stack direction="row" spacing={1}>
       <Tooltip title="View">
         <IconButton size="small" onClick={() => onView(id)}>
           <Visibility fontSize="small" />
@@ -35,17 +34,11 @@ const ClaimActions: React.FC<Props> = ({
 
       <Tooltip title="Delete">
         <span>
-          <IconButton
-            size="small"
-            color="error"
-            onClick={() => onDelete(id)}
-            disabled={disableDelete}
-          >
+          <IconButton size="small" color="error" onClick={() => onDelete(id)} disabled={disableDelete}>
             <Delete fontSize="small" />
           </IconButton>
         </span>
       </Tooltip>
-    </Stack>
-  );
+    </Stack>;
 };
 export default ClaimActions;

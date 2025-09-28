@@ -26,11 +26,9 @@ export type UpdateClaimInput = Partial<{
 }>;
 const isDev = process.env.NODE_ENV === "development";
 export async function listClaims() {
-  return Claim.find()
-    .sort({
-      createdAt: -1,
-    })
-    .populate("policy", "policyNumber");
+  return Claim.find().sort({
+    createdAt: -1
+  }).populate("policy", "policyNumber");
 }
 export async function getClaimById(id: string) {
   return Claim.findById(id).populate("policy", "policyNumber");
@@ -45,25 +43,25 @@ export async function createClaim(data: CreateClaimInput, files?: Express.Multer
     fileUrls: null,
     fileS3Urls: null,
     fileS3Keys: null,
-    fileLocalPaths: null,
+    fileLocalPaths: null
   };
   if (files && files.length) {
-    const uploaded = await Promise.all(files.map((f) => uploadToS3(f)));
-    const urls = uploaded.map((u) => u.s3Url).filter((x): x is string => !!x);
-    const keys = uploaded.map((u) => u.key).filter((x): x is string => !!x);
-    const locals = isDev ? uploaded.map((u) => u.localPath).filter((x): x is string => !!x) : null;
+    const uploaded = await Promise.all(files.map(f => uploadToS3(f)));
+    const urls = uploaded.map(u => u.s3Url).filter((x): x is string => !!x);
+    const keys = uploaded.map(u => u.key).filter((x): x is string => !!x);
+    const locals = isDev ? uploaded.map(u => u.localPath).filter((x): x is string => !!x) : null;
     fileData = {
       ...fileData,
       fileUrls: urls.length ? urls : null,
       fileS3Urls: urls.length ? urls : null,
       fileS3Keys: keys.length ? keys : null,
-      fileLocalPaths: locals && locals.length ? locals : null,
+      fileLocalPaths: locals && locals.length ? locals : null
     };
     if (uploaded[0]) {
       fileData.fileUrl = uploaded[0].s3Url ?? null;
       fileData.fileS3Url = uploaded[0].s3Url ?? null;
       fileData.fileS3Key = uploaded[0].key ?? null;
-      fileData.fileLocalPath = isDev ? (uploaded[0].localPath ?? null) : null;
+      fileData.fileLocalPath = isDev ? uploaded[0].localPath ?? null : null;
     }
   }
   const newClaim = new Claim({
@@ -71,19 +69,15 @@ export async function createClaim(data: CreateClaimInput, files?: Express.Multer
     description: data.description,
     policy: data.policy,
     summary,
-    ...fileData,
+    ...fileData
   });
   return newClaim.save();
 }
-export async function updateClaim(
-  id: string,
-  payload: UpdateClaimInput,
-  files?: Express.Multer.File[]
-) {
+export async function updateClaim(id: string, payload: UpdateClaimInput, files?: Express.Multer.File[]) {
   const claim = await Claim.findById(id);
   if (!claim) return null;
   const updateData: UpdateClaimInput = {
-    ...payload,
+    ...payload
   };
   if (files && files.length) {
     const oldKeys: string[] = [];
@@ -91,23 +85,21 @@ export async function updateClaim(
     if (Array.isArray((claim as any).fileS3Keys)) {
       oldKeys.push(...((claim as any).fileS3Keys as string[]));
     }
-    await Promise.all(
-      oldKeys.map(async (k) => {
-        try {
-          await deleteFromS3(k);
-        } catch (e) {
-          console.error("S3 delete error:", e);
-        }
-      })
-    );
-    const uploaded = await Promise.all(files.map((f) => uploadToS3(f)));
-    const urls = uploaded.map((u) => u.s3Url).filter((x): x is string => !!x);
-    const keys = uploaded.map((u) => u.key).filter((x): x is string => !!x);
-    const locals = isDev ? uploaded.map((u) => u.localPath).filter((x): x is string => !!x) : null;
+    await Promise.all(oldKeys.map(async k => {
+      try {
+        await deleteFromS3(k);
+      } catch (e) {
+        console.error("S3 delete error:", e);
+      }
+    }));
+    const uploaded = await Promise.all(files.map(f => uploadToS3(f)));
+    const urls = uploaded.map(u => u.s3Url).filter((x): x is string => !!x);
+    const keys = uploaded.map(u => u.key).filter((x): x is string => !!x);
+    const locals = isDev ? uploaded.map(u => u.localPath).filter((x): x is string => !!x) : null;
     updateData.fileUrl = uploaded[0]?.s3Url ?? null;
     updateData.fileS3Url = uploaded[0]?.s3Url ?? null;
     updateData.fileS3Key = uploaded[0]?.key ?? null;
-    updateData.fileLocalPath = isDev ? (uploaded[0]?.localPath ?? null) : null;
+    updateData.fileLocalPath = isDev ? uploaded[0]?.localPath ?? null : null;
     updateData.fileUrls = urls.length ? urls : null;
     updateData.fileS3Urls = urls.length ? urls : null;
     updateData.fileS3Keys = keys.length ? keys : null;
@@ -121,7 +113,7 @@ export async function updateClaim(
   }
   return Claim.findByIdAndUpdate(id, updateData, {
     new: true,
-    runValidators: true,
+    runValidators: true
   });
 }
 export async function deleteClaim(id: string) {
@@ -133,15 +125,13 @@ export async function deleteClaim(id: string) {
   if ((claim as any).fileS3Keys && Array.isArray((claim as any).fileS3Keys)) {
     keysToDelete.push(...((claim as any).fileS3Keys as string[]));
   }
-  await Promise.all(
-    keysToDelete.map(async (k) => {
-      try {
-        await deleteFromS3(k);
-      } catch (e) {
-        console.error("S3 delete error:", e);
-      }
-    })
-  );
+  await Promise.all(keysToDelete.map(async k => {
+    try {
+      await deleteFromS3(k);
+    } catch (e) {
+      console.error("S3 delete error:", e);
+    }
+  }));
   if (isDev) {
     const locals: string[] = [];
     if (claim.fileLocalPath) locals.push(claim.fileLocalPath);

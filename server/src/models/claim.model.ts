@@ -12,44 +12,41 @@ export interface IClaim extends Document {
   createdAt: Date;
   updatedAt: Date;
 }
-const ClaimSchema: Schema = new Schema(
-  {
-    name: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    policy: {
-      type: Schema.Types.ObjectId,
-      ref: "Policy",
-      required: true,
-    },
-    description: {
-      type: String,
-      required: true,
-    },
-    summary: {
-      type: String,
-    },
-    fileUrls: {
-      type: [String],
-      default: null,
-    },
-    fileS3Urls: {
-      type: [String],
-      default: null,
-    },
-    fileS3Keys: {
-      type: [String],
-      default: null,
-    },
-    fileLocalPaths: {
-      type: [String],
-      default: null,
-    },
+const ClaimSchema: Schema = new Schema({
+  name: {
+    type: String,
+    required: true,
+    trim: true
   },
-  {
-    timestamps: true,
+  policy: {
+    type: Schema.Types.ObjectId,
+    ref: "Policy",
+    required: true
+  },
+  description: {
+    type: String,
+    required: true
+  },
+  summary: {
+    type: String
+  },
+  fileUrls: {
+    type: [String],
+    default: null
+  },
+  fileS3Urls: {
+    type: [String],
+    default: null
+  },
+  fileS3Keys: {
+    type: [String],
+    default: null
+  },
+  fileLocalPaths: {
+    type: [String],
+    default: null
   }
-);
+}, {
+  timestamps: true
+});
 export default mongoose.model<IClaim>("Claim", ClaimSchema);

@@ -87,28 +87,18 @@ const loading = keyframes`
     transform: translateX(300%);
   }
 `;
-export const RocketAnimation: React.FC = () => (
-  <Box
-    sx={{
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      height: 150,
-    }}
-  >
+export const RocketAnimation: React.FC = () => <Box sx={{
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  height: 150
+}}>
     <svg width="120" height="150" viewBox="0 0 120 150">
-      <g
-        style={{
-          animation: `${float} 3s ease-in-out infinite`,
-          transformOrigin: "center",
-        }}
-      >
-        <path
-          d="M60 10 L75 50 L70 70 L50 70 L45 50 Z"
-          fill="url(#rocketBodyGradient)"
-          stroke="#5a67d8"
-          strokeWidth="1"
-        />
+      <g style={{
+      animation: `${float} 3s ease-in-out infinite`,
+      transformOrigin: "center"
+    }}>
+        <path d="M60 10 L75 50 L70 70 L50 70 L45 50 Z" fill="url(#rocketBodyGradient)" stroke="#5a67d8" strokeWidth="1" />
 
         <path d="M60 10 L65 25 L55 25 Z" fill="#ff6b6b" />
 
@@ -124,12 +114,10 @@ export const RocketAnimation: React.FC = () => (
         <rect x="55" y="55" width="10" height="3" rx="1" fill="#4a5568" opacity="0.5" />
       </g>
 
-      <g
-        style={{
-          animation: `${flicker} 0.2s ease-in-out infinite alternate`,
-          transformOrigin: "center top",
-        }}
-      >
+      <g style={{
+      animation: `${flicker} 0.2s ease-in-out infinite alternate`,
+      transformOrigin: "center top"
+    }}>
         <path d="M50 70 L60 95 L70 70 Z" fill="#ff6b6b" opacity="0.9" />
 
         <path d="M53 70 L60 88 L67 70 Z" fill="#ffd93d" opacity="0.9" />
@@ -145,11 +133,9 @@ export const RocketAnimation: React.FC = () => (
         <circle cx="62" cy="108" r="2" fill="#9ca3af" />
       </g>
 
-      <g
-        style={{
-          animation: `${twinkle} 2s ease-in-out infinite`,
-        }}
-      >
+      <g style={{
+      animation: `${twinkle} 2s ease-in-out infinite`
+    }}>
         <circle cx="20" cy="30" r="1" fill="#ffd93d" />
         <circle cx="100" cy="40" r="1" fill="#ffd93d" />
         <circle cx="15" cy="60" r="1" fill="#ffd93d" />
@@ -165,148 +151,117 @@ export const RocketAnimation: React.FC = () => (
         </linearGradient>
       </defs>
     </svg>
-  </Box>
-);
+  </Box>;
 const ComingSoon: React.FC<{
   feature: string;
-}> = ({ feature }) => (
-  <Box
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: "60vh",
-      textAlign: "center",
-      p: 4,
-      position: "relative",
-    }}
-  >
-    <Box
-      sx={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        opacity: 0.05,
-        backgroundImage:
-          "radial-gradient(circle at 20% 50%, #667eea 0%, transparent 50%), radial-gradient(circle at 80% 80%, #764ba2 0%, transparent 50%)",
-        pointerEvents: "none",
-      }}
-    />
+}> = ({
+  feature
+}) => <Box sx={{
+  display: "flex",
+  flexDirection: "column",
+  alignItems: "center",
+  justifyContent: "center",
+  minHeight: "60vh",
+  textAlign: "center",
+  p: 4,
+  position: "relative"
+}}>
+    <Box sx={{
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    opacity: 0.05,
+    backgroundImage: "radial-gradient(circle at 20% 50%, #667eea 0%, transparent 50%), radial-gradient(circle at 80% 80%, #764ba2 0%, transparent 50%)",
+    pointerEvents: "none"
+  }} />
 
-    <Box
-      sx={{
-        mb: 3,
-        position: "relative",
-        zIndex: 1,
-      }}
-    >
+    <Box sx={{
+    mb: 3,
+    position: "relative",
+    zIndex: 1
+  }}>
       <RocketAnimation />
     </Box>
 
-    <Typography
-      variant="h2"
-      sx={{
-        fontWeight: 700,
-        mb: 2,
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-        backgroundClip: "text",
-        WebkitBackgroundClip: "text",
-        WebkitTextFillColor: "transparent",
-        animation: `${fadeInUp} 0.8s ease-out`,
-      }}
-    >
+    <Typography variant="h2" sx={{
+    fontWeight: 700,
+    mb: 2,
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    backgroundClip: "text",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+    animation: `${fadeInUp} 0.8s ease-out`
+  }}>
       {feature} Coming Soon
     </Typography>
 
-    <Typography
-      variant="h6"
-      color="text.secondary"
-      sx={{
-        maxWidth: 500,
-        mb: 3,
-        animation: `${fadeInUp} 0.8s ease-out 0.2s backwards`,
-      }}
-    >
-      We're working hard to bring you this feature.<br/>
-      Stay tuned for updates!<br/>
+    <Typography variant="h6" color="text.secondary" sx={{
+    maxWidth: 500,
+    mb: 3,
+    animation: `${fadeInUp} 0.8s ease-out 0.2s backwards`
+  }}>
+      We're working hard to bring you this feature.<br />
+      Stay tuned for updates!<br />
       Susbscribe via email to get latest updates.
     </Typography>
 
-    <Box
-      sx={{
-        width: 200,
-        height: 4,
-        bgcolor: "grey.200",
-        borderRadius: 1,
-        overflow: "hidden",
-        position: "relative",
-        mb: 3,
-      }}
-    >
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          height: "100%",
-          width: "40%",
-          background: "linear-gradient(90deg, #667eea, #764ba2)",
-          animation: `${loading} 2s ease-in-out infinite`,
-          borderRadius: 1,
-        }}
-      />
+    <Box sx={{
+    width: 200,
+    height: 4,
+    bgcolor: "grey.200",
+    borderRadius: 1,
+    overflow: "hidden",
+    position: "relative",
+    mb: 3
+  }}>
+      <Box sx={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      height: "100%",
+      width: "40%",
+      background: "linear-gradient(90deg, #667eea, #764ba2)",
+      animation: `${loading} 2s ease-in-out infinite`,
+      borderRadius: 1
+    }} />
     </Box>
 
-    <Chip
-      label="In Development"
-      variant="outlined"
-      sx={{
-        borderColor: "#667eea",
-        color: "#667eea",
-        fontWeight: 600,
-        fontSize: "0.9rem",
-        px: 2,
-        py: 0.5,
-        animation: `${pulse} 2s ease-in-out infinite`,
-      }}
-    />
+    <Chip label="In Development" variant="outlined" sx={{
+    borderColor: "#667eea",
+    color: "#667eea",
+    fontWeight: 600,
+    fontSize: "0.9rem",
+    px: 2,
+    py: 0.5,
+    animation: `${pulse} 2s ease-in-out infinite`
+  }} />
 
-    <Box
-      sx={{
-        mt: 6,
-        display: "flex",
-        gap: 2,
-        flexWrap: "wrap",
-        justifyContent: "center",
-      }}
-    >
-      {["Analytics", "Automation", "Integration"].map((item, index) => (
-        <Paper
-          key={item}
-          elevation={0}
-          sx={{
-            p: 2,
-            px: 3,
-            border: "1px solid",
-            borderColor: "divider",
-            borderRadius: 2,
-            animation: `${fadeInUp} 0.8s ease-out ${0.4 + index * 0.1}s backwards`,
-            "&:hover": {
-              borderColor: "#667eea",
-              transform: "translateY(-2px)",
-              transition: "all 0.3s ease",
-            },
-          }}
-        >
+    <Box sx={{
+    mt: 6,
+    display: "flex",
+    gap: 2,
+    flexWrap: "wrap",
+    justifyContent: "center"
+  }}>
+      {["Analytics", "Automation", "Integration"].map((item, index) => <Paper key={item} elevation={0} sx={{
+      p: 2,
+      px: 3,
+      border: "1px solid",
+      borderColor: "divider",
+      borderRadius: 2,
+      animation: `${fadeInUp} 0.8s ease-out ${0.4 + index * 0.1}s backwards`,
+      "&:hover": {
+        borderColor: "#667eea",
+        transform: "translateY(-2px)",
+        transition: "all 0.3s ease"
+      }
+    }}>
           <Typography variant="body2" color="text.secondary">
             {item}
           </Typography>
-        </Paper>
-      ))}
+        </Paper>)}
     </Box>
-  </Box>
-);
+  </Box>;
 export default ComingSoon;

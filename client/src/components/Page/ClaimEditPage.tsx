@@ -5,7 +5,9 @@ import type { ClaimFormData } from "@/types";
 import Loader from "@components/UI/Loader";
 const ClaimForm = React.lazy(() => import("@components/Claim/ClaimForm"));
 const ClaimEditPage: React.FC = () => {
-  const { id } = useParams<{
+  const {
+    id
+  } = useParams<{
     id: string;
   }>();
   const navigate = useNavigate();
@@ -40,24 +42,11 @@ const ClaimEditPage: React.FC = () => {
     }
   };
   if (loading) return <Loader />;
-  if (!initial)
-    return (
-      <div
-        style={{
-          padding: 24,
-        }}
-      >
+  if (!initial) return <div style={{
+    padding: 24
+  }}>
         Claim not found.
-      </div>
-    );
-  return (
-    <ClaimForm
-      onSubmit={handleUpdate}
-      summary={initial.summary ?? ""}
-      loading={saving}
-      initial={initial}
-      mode="edit"
-    />
-  );
+      </div>;
+  return <ClaimForm onSubmit={handleUpdate} summary={initial.summary ?? ""} loading={saving} initial={initial} mode="edit" />;
 };
 export default ClaimEditPage;

@@ -5,53 +5,42 @@ interface ClaimSummaryProps {
   summary: string;
   defaultValue?: string;
 }
-const ClaimSummary: React.FC<ClaimSummaryProps> = ({ summary, defaultValue }) => {
-  return (
-    <Card
-      sx={{
-        mt: 3,
-        bgcolor: "primary.50",
-        border: "1px solid",
-        borderColor: "primary.200",
-      }}
-    >
+const ClaimSummary: React.FC<ClaimSummaryProps> = ({
+  summary,
+  defaultValue
+}) => {
+  return <Card sx={{
+    mt: 3,
+    bgcolor: "primary.50",
+    border: "1px solid",
+    borderColor: "primary.200"
+  }}>
       <CardContent>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            mb: 1,
-          }}
-        >
-          <AutoAwesomeMosaicOutlined
-            color="primary"
-            sx={{
-              mr: 1,
-            }}
-          />
+        <Box sx={{
+        display: "flex",
+        alignItems: "center",
+        mb: 1
+      }}>
+          <AutoAwesomeMosaicOutlined color="primary" sx={{
+          mr: 1
+        }} />
           <Typography variant="h6" color="primary">
             AI-Generated Summary
           </Typography>
         </Box>
 
-        <Box
-          sx={{
-            maxHeight: 200,
-            overflowY: "auto",
-            pr: 1,
-          }}
-        >
-          <Typography
-            variant="body1"
-            sx={{
-              whiteSpace: "pre-wrap",
-            }}
-          >
+        <Box sx={{
+        maxHeight: 200,
+        overflowY: "auto",
+        pr: 1
+      }}>
+          <Typography variant="body1" sx={{
+          whiteSpace: "pre-wrap"
+        }}>
             {summary ?? defaultValue}
           </Typography>
         </Box>
       </CardContent>
-    </Card>
-  );
+    </Card>;
 };
 export default ClaimSummary;

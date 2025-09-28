@@ -4,7 +4,9 @@ import apiService from "@services/apiService.js";
 import Loader from "@components/UI/Loader";
 const ClaimForm = React.lazy(() => import("@components/Claim/ClaimForm"));
 const ClaimViewPage: React.FC = () => {
-  const { id } = useParams<{
+  const {
+    id
+  } = useParams<{
     id: string;
   }>();
   const navigate = useNavigate();
@@ -25,36 +27,17 @@ const ClaimViewPage: React.FC = () => {
     };
   }, [id]);
   if (loading) return <Loader />;
-  if (!initial)
-    return (
-      <div
-        style={{
-          padding: 24,
-        }}
-      >
+  if (!initial) return <div style={{
+    padding: 24
+  }}>
         Claim not found.
-      </div>
-    );
-  return (
-    <React.Suspense
-      fallback={
-        <div
-          style={{
-            padding: 24,
-          }}
-        >
+      </div>;
+  return <React.Suspense fallback={<div style={{
+    padding: 24
+  }}>
           Loading form…
-        </div>
-      }
-    >
-      <ClaimForm
-        onSubmit={() => Promise.resolve()}
-        summary={initial.summary ?? ""}
-        loading={false}
-        initial={initial}
-        mode="view"
-      />
-    </React.Suspense>
-  );
+        </div>}>
+      <ClaimForm onSubmit={() => Promise.resolve()} summary={initial.summary ?? ""} loading={false} initial={initial} mode="view" />
+    </React.Suspense>;
 };
 export default ClaimViewPage;

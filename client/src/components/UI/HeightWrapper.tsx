@@ -10,21 +10,17 @@ const HeightWrapper = ({
 } & BoxProps) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  return (
-    <Box
-      sx={{
-        width: isMobile ? "100%" : width,
-        height: `calc(100vh - ${isMobile ? theme.spacing(0) : theme.spacing(4)})`,
-        display: "flex",
-        flexDirection: "column",
-        overflowY: "scroll",
-        boxSizing: "border-box",
-        maxWidth: "100vw",
-        ...rest,
-      }}
-    >
+  return <Box sx={{
+    width: isMobile ? "100%" : width,
+    height: `calc(100vh - ${isMobile ? theme.spacing(0) : theme.spacing(4)})`,
+    display: "flex",
+    flexDirection: "column",
+    overflowY: "scroll",
+    boxSizing: "border-box",
+    maxWidth: "100vw",
+    ...rest
+  }}>
       {children}
-    </Box>
-  );
+    </Box>;
 };
 export default HeightWrapper;

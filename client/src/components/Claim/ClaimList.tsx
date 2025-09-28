@@ -1,16 +1,5 @@
 import React from "react";
-import {
-  Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Chip,
-  Typography,
-} from "@mui/material";
+import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Chip, Typography } from "@mui/material";
 import { formatDate } from "@/utils/validators.js";
 import { Delete, Edit, Visibility } from "@mui/icons-material";
 import { Claim } from "@/types";
@@ -21,23 +10,23 @@ interface ClaimListProps {
   loading: Boolean;
   onDelete: (id: string) => void;
 }
-const ClaimList: React.FC<ClaimListProps> = ({ claims, onView, onEdit, onDelete }) => {
+const ClaimList: React.FC<ClaimListProps> = ({
+  claims,
+  onView,
+  onEdit,
+  onDelete
+}) => {
   if (claims.length === 0) {
-    return (
-      <Paper
-        sx={{
-          p: 3,
-          textAlign: "center",
-        }}
-      >
+    return <Paper sx={{
+      p: 3,
+      textAlign: "center"
+    }}>
         <Typography variant="body1" color="text.secondary">
           No claims found. Submit your first claim to get started.
         </Typography>
-      </Paper>
-    );
+      </Paper>;
   }
-  return (
-    <TableContainer component={Paper}>
+  return <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
@@ -50,8 +39,7 @@ const ClaimList: React.FC<ClaimListProps> = ({ claims, onView, onEdit, onDelete 
           </TableRow>
         </TableHead>
         <TableBody>
-          {claims.map((claim) => (
-            <TableRow key={claim._id}>
+          {claims.map(claim => <TableRow key={claim._id}>
               <TableCell>{claim.policy.policyNumber}</TableCell>
               <TableCell>{claim.name}</TableCell>
               <TableCell>
@@ -73,11 +61,9 @@ const ClaimList: React.FC<ClaimListProps> = ({ claims, onView, onEdit, onDelete 
                   <Delete />
                 </IconButton>
               </TableCell>
-            </TableRow>
-          ))}
+            </TableRow>)}
         </TableBody>
       </Table>
-    </TableContainer>
-  );
+    </TableContainer>;
 };
 export default ClaimList;

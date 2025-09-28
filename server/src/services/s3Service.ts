@@ -1,10 +1,4 @@
-import {
-  S3Client,
-  PutObjectCommand,
-  DeleteObjectCommand,
-  GetObjectCommand,
-  PutObjectCommandInput,
-} from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand, PutObjectCommandInput } from "@aws-sdk/client-s3";
 import { getSignedUrl as presign } from "@aws-sdk/s3-request-presigner";
 import fs from "fs";
 import path from "path";
@@ -14,7 +8,7 @@ const keyPrefix = () => process.env.AWS_S3_PREFIX!.replace(/^\/+|\/+$/g, "");
 const isDev = () => process.env.NODE_ENV === "development";
 const defaultACL = () => process.env.S3_OBJECT_ACL;
 const s3 = new S3Client({
-  region: region(),
+  region: region()
 });
 export interface FileUploadResult {
   s3Url: string | null;
@@ -31,22 +25,20 @@ function warn(label: string, msg: string, extra?: Record<string, unknown>) {
     console.warn(base);
   }
 }
-function canUseS3():
-  | {
-      ok: true;
-    }
-  | {
-      ok: false;
-      reason: string;
-    } {
+function canUseS3(): {
+  ok: true;
+} | {
+  ok: false;
+  reason: string;
+} {
   if (!bucket()) {
     return {
       ok: false,
-      reason: "S3_BUCKET_NAME is not configured",
+      reason: "S3_BUCKET_NAME is not configured"
     };
   }
   return {
-    ok: true,
+    ok: true
   };
 }
 function finalizeLocalFile(tempPath: string): {
@@ -58,7 +50,7 @@ function finalizeLocalFile(tempPath: string): {
       const localDir = path.join(process.cwd(), "uploads");
       if (!fs.existsSync(localDir)) {
         fs.mkdirSync(localDir, {
-          recursive: true,
+          recursive: true
         });
       }
       const newPath = path.join(localDir, path.basename(tempPath));
@@ -74,30 +66,30 @@ function finalizeLocalFile(tempPath: string): {
       if (fs.existsSync(tempPath)) fs.unlinkSync(tempPath);
     } catch {}
     warn("finalize", "Local temp cleanup warning", {
-      error: String(e),
+      error: String(e)
     });
   }
   return {
-    localPath,
+    localPath
   };
 }
-export async function uploadToS3(
-  file: Express.Multer.File
-): Promise<FileUploadResult> {
+export async function uploadToS3(file: Express.Multer.File): Promise<FileUploadResult> {
   const pre = canUseS3();
   const safeName = path.basename(file.originalname).replace(/\s/g, "-");
   const key = `${keyPrefix()}/${Date.now()}-${safeName}`;
   if (!pre.ok) {
-    const { localPath } = finalizeLocalFile(file.path);
+    const {
+      localPath
+    } = finalizeLocalFile(file.path);
     warn("upload-skip", `Skipping S3 upload: ${pre.reason}`, {
-      filename: safeName,
+      filename: safeName
     });
     return {
       s3Url: null,
       key: null,
       localPath,
       skipped: true,
-      reason: pre.reason,
+      reason: pre.reason
     };
   }
   try {
@@ -107,31 +99,33 @@ export async function uploadToS3(
       Key: key,
       Body: bodyStream,
       ContentType: file.mimetype,
-      ACL: defaultACL() as any,
+      ACL: defaultACL() as any
     };
     await s3.send(new PutObjectCommand(putParams));
-    const s3Url = `https://${bucket()}.s3.${region}.amazonaws.com/${encodeURIComponent(
-      key
-    )}`;
-    const { localPath } = finalizeLocalFile(file.path);
+    const s3Url = `https://${bucket()}.s3.${region}.amazonaws.com/${encodeURIComponent(key)}`;
+    const {
+      localPath
+    } = finalizeLocalFile(file.path);
     return {
       s3Url,
       key,
-      localPath,
+      localPath
     };
   } catch (e) {
-    const { localPath } = finalizeLocalFile(file.path);
+    const {
+      localPath
+    } = finalizeLocalFile(file.path);
     warn("upload-fail", "S3 upload failed—returning local-only result", {
       error: String(e),
       bucket: bucket(),
-      key,
+      key
     });
     return {
       s3Url: null,
       key: null,
       localPath,
       skipped: true,
-      reason: `S3 upload failed: ${e}`,
+      reason: `S3 upload failed: ${e}`
     };
   }
 }
@@ -139,7 +133,7 @@ export async function deleteFromS3(key: string): Promise<void> {
   const pre = canUseS3();
   if (!pre.ok) {
     warn("delete-skip", `Skipping S3 delete: ${pre.reason}`, {
-      key,
+      key
     });
     return;
   }
@@ -148,27 +142,22 @@ export async function deleteFromS3(key: string): Promise<void> {
     return;
   }
   try {
-    await s3.send(
-      new DeleteObjectCommand({
-        Bucket: bucket(),
-        Key: key,
-      })
-    );
+    await s3.send(new DeleteObjectCommand({
+      Bucket: bucket(),
+      Key: key
+    }));
   } catch (e) {
     warn("delete-fail", "S3 delete failed (ignored)", {
       error: String(e),
-      key,
+      key
     });
   }
 }
-export async function getSignedUrl(
-  key: string,
-  expiresIn: number = 3600
-): Promise<string> {
+export async function getSignedUrl(key: string, expiresIn: number = 3600): Promise<string> {
   const pre = canUseS3();
   if (!pre.ok) {
     warn("signedurl-skip", `Skipping signed URL: ${pre.reason}`, {
-      key,
+      key
     });
     return "";
   }
@@ -179,15 +168,15 @@ export async function getSignedUrl(
   try {
     const cmd = new GetObjectCommand({
       Bucket: bucket(),
-      Key: key,
+      Key: key
     });
     return await presign(s3, cmd, {
-      expiresIn,
+      expiresIn
     });
   } catch (e) {
     warn("signedurl-fail", "Signed URL generation failed (returning empty)", {
       error: String(e),
-      key,
+      key
     });
     return "";
   }
@@ -200,32 +189,28 @@ export async function verifyS3Access(): Promise<{
   if (!pre.ok) {
     return {
       success: false,
-      error: pre.reason,
+      error: pre.reason
     };
   }
   try {
     const testKey = `${keyPrefix()}/health-check-${Date.now()}.txt`;
-    await s3.send(
-      new PutObjectCommand({
-        Bucket: bucket(),
-        Key: testKey,
-        Body: "health check",
-        ContentType: "text/plain",
-      })
-    );
-    await s3.send(
-      new DeleteObjectCommand({
-        Bucket: bucket(),
-        Key: testKey,
-      })
-    );
+    await s3.send(new PutObjectCommand({
+      Bucket: bucket(),
+      Key: testKey,
+      Body: "health check",
+      ContentType: "text/plain"
+    }));
+    await s3.send(new DeleteObjectCommand({
+      Bucket: bucket(),
+      Key: testKey
+    }));
     return {
-      success: true,
+      success: true
     };
   } catch (e) {
     return {
       success: false,
-      error: `S3 access verification failed: ${e}`,
+      error: `S3 access verification failed: ${e}`
     };
   }
 }

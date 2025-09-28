@@ -25,7 +25,7 @@ export const formatDate = (date: string | Date): string => {
   return new Date(date).toLocaleDateString("en-US", {
     year: "numeric",
     month: "long",
-    day: "numeric",
+    day: "numeric"
   });
 };
 export const formatFileSize = (bytes: number): string => {
@@ -33,5 +33,5 @@ export const formatFileSize = (bytes: number): string => {
   const k = 1024;
   const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
+  return Math.round(bytes / Math.pow(k, i) * 100) / 100 + " " + sizes[i];
 };
