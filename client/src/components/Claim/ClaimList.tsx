@@ -1,8 +1,20 @@
 import React from "react";
-import { Paper, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, IconButton, Chip, Typography } from "@mui/material";
+import {
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Chip,
+  Typography,
+} from "@mui/material";
 import { formatDate } from "@/utils/validators.js";
 import { Delete, Edit, Visibility } from "@mui/icons-material";
 import { Claim } from "@/types";
+import Loader from "@components/UI/Loader";
 interface ClaimListProps {
   claims: Claim[];
   onView: (id: string) => void;
@@ -14,19 +26,39 @@ const ClaimList: React.FC<ClaimListProps> = ({
   claims,
   onView,
   onEdit,
-  onDelete
+  onDelete,
+  loading = false,
 }) => {
+  if (loading) {
+    return (
+      <Paper
+        sx={{
+          p: 3,
+          textAlign: "center",
+        }}
+      >
+        <Typography variant="body1" color="text.secondary">
+          Please Wait Loading your claims ...
+        </Typography>
+      </Paper>
+    );
+  }
   if (claims.length === 0) {
-    return <Paper sx={{
-      p: 3,
-      textAlign: "center"
-    }}>
+    return (
+      <Paper
+        sx={{
+          p: 3,
+          textAlign: "center",
+        }}
+      >
         <Typography variant="body1" color="text.secondary">
           No claims found. Submit your first claim to get started.
         </Typography>
-      </Paper>;
+      </Paper>
+    );
   }
-  return <TableContainer component={Paper}>
+  return (
+    <TableContainer component={Paper}>
       <Table>
         <TableHead>
           <TableRow>
@@ -39,7 +71,8 @@ const ClaimList: React.FC<ClaimListProps> = ({
           </TableRow>
         </TableHead>
         <TableBody>
-          {claims.map(claim => <TableRow key={claim._id}>
+          {claims.map((claim) => (
+            <TableRow key={claim._id}>
               <TableCell>{claim.policy.policyNumber}</TableCell>
               <TableCell>{claim.name}</TableCell>
               <TableCell>
@@ -49,21 +82,37 @@ const ClaimList: React.FC<ClaimListProps> = ({
               <TableCell>
                 <Chip label="Submitted" color="primary" size="small" />
               </TableCell>
-              <TableCell>{claim.createdAt ? formatDate(claim.createdAt) : "-"}</TableCell>
+              <TableCell>
+                {claim.createdAt ? formatDate(claim.createdAt) : "-"}
+              </TableCell>
               <TableCell align="center">
-                <IconButton onClick={() => onView(claim._id!)} size="small" color="primary">
+                <IconButton
+                  onClick={() => onView(claim._id!)}
+                  size="small"
+                  color="primary"
+                >
                   <Visibility />
                 </IconButton>
-                <IconButton onClick={() => onEdit(claim._id!)} size="small" color="default">
+                <IconButton
+                  onClick={() => onEdit(claim._id!)}
+                  size="small"
+                  color="default"
+                >
                   <Edit />
                 </IconButton>
-                <IconButton onClick={() => onDelete(claim._id!)} size="small" color="error">
+                <IconButton
+                  onClick={() => onDelete(claim._id!)}
+                  size="small"
+                  color="error"
+                >
                   <Delete />
                 </IconButton>
               </TableCell>
-            </TableRow>)}
+            </TableRow>
+          ))}
         </TableBody>
       </Table>
-    </TableContainer>;
+    </TableContainer>
+  );
 };
 export default ClaimList;

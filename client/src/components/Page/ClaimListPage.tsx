@@ -43,13 +43,17 @@ const ClaimListPage: React.FC = () => {
       console.error("Error deleting claim:", e);
     }
   };
-  const handleDialogClose = () => navigate("/claims");
-  const handleDialogSaved = async () => {
-    await loadClaims();
-    navigate("/claims");
-  };
-  return <Box>
-      <ClaimList loading={loading} claims={claims} onView={handleViewClaim} onEdit={handleEditClaim} onDelete={handleDeleteClaim} />
-    </Box>;
+
+  return (
+    <Box>
+      <ClaimList
+        loading={loading}
+        claims={claims}
+        onView={handleViewClaim}
+        onEdit={handleEditClaim}
+        onDelete={handleDeleteClaim}
+      />
+    </Box>
+  );
 };
 export default ClaimListPage;
